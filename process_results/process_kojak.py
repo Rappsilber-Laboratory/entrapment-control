@@ -81,18 +81,11 @@ def process_kojak(result_file, proteins):
     # mark TD and DD as decoys
     df.loc[(df['decoy1'] | df['decoy2']), 'entr_group'] = 'decoy'
 
+    # add score column
+    df['score'] = df['E_value']
+
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment'] / summary_table['decoy']
     # # summary_table.to_csv('kojak.csv')
 
     return df
-
-
-# score = 'E_value'#'iProbability' #'K_score'
-# ax = plot_distribution(df=df, x=score, bins=50)
-# plt.show()
-#
-# ax = plot_distribution(df=df, x=score, bins=50, ylim_top=100)
-# plt.show()
-
-

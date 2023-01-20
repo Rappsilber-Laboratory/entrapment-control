@@ -39,11 +39,11 @@ def process_xlinkx(result_file, decoy_file, proteins):
     # concat target and decoy
     df = pd.concat([target_df, decoy_df])
 
+    # add score column
+    df['score'] = df['XlinkX Score']
+
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment']/summary_table['decoy']
     # summary_table.to_csv('xlinkx_numbers.csv')
 
     return df
-
-# ax = plot_distribution(df=df_plot.reset_index(), x='XlinkX Score', bins=50)
-# plt.show()

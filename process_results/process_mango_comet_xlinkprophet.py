@@ -34,17 +34,11 @@ def process_mango_comet_xlinkprophet(result_file, proteins):
     # mark TD and DD as decoys
     df.loc[((df['decoy'] == 1) | (df['decoy-decoy'] == 1)), 'entr_group'] = 'decoy'
 
+    # add score column
+    df['score'] = df['probability']
+
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment']/summary_table['decoy']
     # summary_table.to_csv('iprophet.csv')
 
     return df
-
-
-# ax = plot_distribution(df=df, x='probability', bins=50)
-# plt.show()
-#
-# ax = plot_distribution(df=df, x='probability', bins=50, ylim_top=300)
-# plt.show()
-
-

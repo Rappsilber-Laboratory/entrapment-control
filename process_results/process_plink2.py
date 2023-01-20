@@ -49,17 +49,11 @@ def process_plink2(result_file, unfiltered_result_file, proteins):
     # mark TD and DD as decoys
     df.loc[((df['isTD']) | (df['isDD'])), 'entr_group'] = 'decoy'
 
+    # add score column
+    df['score'] = df['1 - Score']
+
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment'] / summary_table['decoy']
     # summary_table.to_csv('plink2.csv')
 
     return df
-
-
-# ax = plot_distribution(df=df, x='1 - Score', bins=np.arange(df['1 - Score'].min(), df['1 - Score'].max(), 0.025))
-# plt.show()
-#
-# ax = plot_distribution(df=df, x='1 - Score', bins=np.arange(df['1 - Score'].min(), df['1 - Score'].max(), 0.025),
-#                        ylim_top=120)
-# plt.show()
-

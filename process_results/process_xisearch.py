@@ -33,15 +33,11 @@ def process_xisearch(result_file, proteins):
     # mark TD and DD as decoys
     df.loc[((df['isTD']) | (df['isDD'])), 'entr_group'] = 'decoy'
 
+    # add score column
+    df['score'] = df['Score']
+
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment'] / summary_table['decoy']
     # summary_table.to_csv('xisearch.csv')
 
     return df
-
-
-# ax = plot_distribution(df=df, x='Score', bins=50)
-# plt.show()
-#
-# ax = plot_distribution(df=df, x='Score', bins=50, ylim_top=50)
-# plt.show()
