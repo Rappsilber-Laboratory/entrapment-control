@@ -1,27 +1,49 @@
+import pandas as pd
 from plots_and_functions import *
 
-fasta_1 = fasta_to_dict('database/uniprot-k12-filtered-proteome_UP000000625.fasta')
-all_proteins = list(fasta_1.keys())
 
-df_targets = pd.read_csv('../xlinkx/2p_all_files_plus3_CSMs.txt', sep='\t')
-df_decoys = pd.read_csv('../xlinkx/2p_all_files_plus3_DecoyCSMs.txt', sep='\t')
-df_targets = df_targets[df_targets['Crosslink Type'].str.contains('Inter')]
-df_decoys = df_decoys[df_decoys['Crosslink Type'].str.contains('Inter')]
-df_targets['E1'] = df_targets['Protein Accession A'].apply(check_amb, all_proteins=all_proteins)
-df_targets['E2'] = df_targets['Protein Accession B'].apply(check_amb, all_proteins=all_proteins)
-df_targets['EE'] = df_targets['E1'] & df_targets['E2']
-df_targets['EH'] = (df_targets['E1'] & (~df_targets['E2']) | (~df_targets['E1']) & df_targets['E2'])
-df_targets['HH'] = (~df_targets['E1']) & (~df_targets['E2'])
-print(sum(df_targets.HH | df_targets.EH)/len(df_targets))
+def process_xlinkx(result_file, decoy_file, proteins):
+    """
+    Process the results of XlinkX.
 
-df_targets['entr_group'] = df_targets['E1'].astype(int) + df_targets['E2'].astype(int)
-df_targets['entr_group'] = df_targets['entr_group'].replace({2: 'E.coli', 1: 'entrapment', 0: 'entrapment'})
-df_decoys['entr_group'] = 'decoy'
-df_plot = pd.concat([df_targets, df_decoys])
+    :param result_file: path to the txt/tsv file with the search results
+    :param decoy_file:  path to the txt/tsv file with the decoy results
+    :param proteins: list of all proteins in the database
+    :return: DataFrame with the results
+    """
+    # read the files
+    target_df = pd.read_csv(result_file, sep='\t')
+    decoy_df = pd.read_csv(decoy_file, sep='\t')
+    # subset to heteromeric
+    target_df = target_df[target_df['Crosslink Type'].str.contains('Inter')]
+    decoy_df = decoy_df[decoy_df['Crosslink Type'].str.contains('Inter')]
 
-ax = plot_distribution(df=df_plot.reset_index(), x='XlinkX Score', bins=50)
-plt.show()
+    # are protein 1 or protein 2 from E. coli --> gives true / false in separate column
+    # if ambiguous match contains an E. coli protein return True
+    target_df['E1'] = target_df['Protein Accession A'].apply(find_protein_amb, all_proteins=proteins)
+    target_df['E2'] = target_df['Protein Accession B'].apply(find_protein_amb, all_proteins=proteins)
 
-summary_table = df_plot.reset_index()['entr_group'].value_counts()
-summary_table['ratio_entrapment_decoy'] = summary_table['entrapment']/summary_table['decoy']
-summary_table.to_csv('xlinkx_numbers.csv')
+    # add columns differentiating E. coli - E.coli (EE), E. coli - human (EH), human - human (HH)
+    target_df['EE'] = target_df['E1'] & target_df['E2']
+    target_df['EH'] = (target_df['E1'] & (~target_df['E2']) | (~target_df['E1']) & target_df['E2'])
+    target_df['HH'] = (~target_df['E1']) & (~target_df['E2'])
+    # print(sum(target_df.HH | target_df.EH)/len(target_df))
+
+    # add group column for plotting purposes
+    target_df['entr_group'] = target_df['E1'].astype(int) + target_df['E2'].astype(int)
+    target_df['entr_group'] = target_df['entr_group'].replace({2: 'E.coli', 1: 'entrapment', 0: 'entrapment'})
+
+    # mark decoys
+    decoy_df['entr_group'] = 'decoy'
+
+    # concat target and decoy
+    df = pd.concat([target_df, decoy_df])
+
+    # summary_table = df.reset_index()['entr_group'].value_counts()
+    # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment']/summary_table['decoy']
+    # summary_table.to_csv('xlinkx_numbers.csv')
+
+    return df
+
+# ax = plot_distribution(df=df_plot.reset_index(), x='XlinkX Score', bins=50)
+# plt.show()

@@ -1,0 +1,50 @@
+import pandas as pd
+from plots_and_functions import *
+
+
+def process_mango_comet_xlinkprophet(result_file, proteins):
+    """
+    Process the results of MangoCometXlinkProphet.
+
+    :param result_file: path to the xlsx file with the search results
+    :param proteins: list of all proteins in the database
+    :return: DataFrame with the results
+    """
+    # read the csv file
+    df = pd.read_excel(result_file)
+
+    # subset to heteromeric
+    df = df[df.intra == 0]
+
+    # are protein 1 or protein 2 from E. coli --> gives true / false in separate column
+    # if ambiguous match contains an E. coli protein return True
+    df['E1'] = df['protein1'].apply(find_protein_amb, all_proteins=proteins)
+    df['E2'] = df['protein2'].apply(find_protein_amb, all_proteins=proteins)
+
+    # add columns differentiating E. coli - E.coli (EE), E. coli - human (EH), human - human (HH)
+    df['EE'] = df['E1'] & df['E2']
+    df['EH'] = (df['E1'] & (~df['E2']) | (~df['E1']) & df['E2'])
+    df['HH'] = (~df['E1']) & (~df['E2'])
+    # print(sum(df.HH | df.EH) / len(df))
+
+    # add group column for plotting purposes
+    df['entr_group'] = df['E1'].astype(int) + df['E2'].astype(int)
+    df['entr_group'] = df['entr_group'].replace({2: 'E.coli', 1: 'entrapment', 0: 'entrapment'})
+
+    # mark TD and DD as decoys
+    df.loc[((df['decoy'] == 1) | (df['decoy-decoy'] == 1)), 'entr_group'] = 'decoy'
+
+    # summary_table = df.reset_index()['entr_group'].value_counts()
+    # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment']/summary_table['decoy']
+    # summary_table.to_csv('iprophet.csv')
+
+    return df
+
+
+# ax = plot_distribution(df=df, x='probability', bins=50)
+# plt.show()
+#
+# ax = plot_distribution(df=df, x='probability', bins=50, ylim_top=300)
+# plt.show()
+
+

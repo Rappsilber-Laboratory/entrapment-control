@@ -7,6 +7,7 @@ name = "pypi"
 pandas = "*"
 seaborn = "*"
 biopython = "*"
+openpyxl = "*"
 
 [dev-packages]
 

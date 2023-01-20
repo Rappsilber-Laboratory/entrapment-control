@@ -1,10 +1,16 @@
-import pandas as pd
 from Bio import SeqIO
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 
 def fasta_to_dict(fasta_file, exclude=None):
+    """
+    Read in a fasta file and return a dictionary.
+
+    :param fasta_file: path to the fasta file
+    :param exclude: list of fasta headers to exclude
+    :return: dictionary with fasta headers as keys and sequences as values
+    """
     record_dict = SeqIO.to_dict(SeqIO.parse(fasta_file, "fasta"))
     record_dict_old = record_dict.copy()
 
@@ -22,9 +28,16 @@ def fasta_to_dict(fasta_file, exclude=None):
     return record_dict
 
 
-def check_amb(x, all_proteins):
-    if ';' in x:
-        proteins = x.split(';')
+def find_protein_amb(protein, all_proteins):
+    """
+    Check if a protein is in the list of all proteins (considering ambiguous matches).
+
+    :param protein: protein to search for
+    :param all_proteins: list of all proteins
+    :return: True if protein is in list, False otherwise
+    """
+    if ';' in protein:
+        proteins = protein.split(';')
         for prot_i in proteins:
             if '|' in prot_i:
                 prot_i = prot_i.split('|')[1]
@@ -32,9 +45,9 @@ def check_amb(x, all_proteins):
                 return True
             return False
     else:
-        if '|' in x:
-            x = x.split('|')[1]
-        if x in all_proteins:
+        if '|' in protein:
+            protein = protein.split('|')[1]
+        if protein in all_proteins:
             return True
         else:
             return False
