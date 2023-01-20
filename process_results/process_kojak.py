@@ -84,6 +84,9 @@ def process_kojak(result_file, proteins):
     # add score column
     df['score'] = df['E_value']
 
+    # add search engine column
+    df['search_engine'] = 'Kojak'
+
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment'] / summary_table['decoy']
     # # summary_table.to_csv('kojak.csv')

@@ -38,6 +38,9 @@ def process_proteinprospector(result_file, proteins):
     # add score column
     df['score'] = df['SVM.score']
 
+    # add search engine column
+    df['search_engine'] = 'ProteinProspector'
+
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment'] / summary_table['decoy']
     # summary_table.to_csv('proteinprospector.csv')

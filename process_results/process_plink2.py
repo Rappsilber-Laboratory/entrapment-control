@@ -52,6 +52,9 @@ def process_plink2(result_file, unfiltered_result_file, proteins):
     # add score column
     df['score'] = df['1 - Score']
 
+    # add search engine column
+    df['search_engine'] = 'pLink2'
+
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment'] / summary_table['decoy']
     # summary_table.to_csv('plink2.csv')

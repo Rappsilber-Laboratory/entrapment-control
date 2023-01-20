@@ -37,6 +37,9 @@ def process_mango_comet_xlinkprophet(result_file, proteins):
     # add score column
     df['score'] = df['probability']
 
+    # add search engine column
+    df['search_engine'] = 'MangoCometXlinkProphet'
+
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment']/summary_table['decoy']
     # summary_table.to_csv('iprophet.csv')

@@ -36,6 +36,9 @@ def process_xisearch(result_file, proteins):
     # add score column
     df['score'] = df['Score']
 
+    # add search engine column
+    df['search_engine'] = 'xiSEARCH'
+
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment'] / summary_table['decoy']
     # summary_table.to_csv('xisearch.csv')
