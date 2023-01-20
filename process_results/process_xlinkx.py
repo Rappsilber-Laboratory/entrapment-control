@@ -1,5 +1,3 @@
-import pandas as pd
-
 from plots_and_functions import *
 
 fasta_1 = fasta_to_dict(
