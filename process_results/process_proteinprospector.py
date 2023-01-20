@@ -1,8 +1,7 @@
 from plots_and_functions import *
 
 
-fasta_1 = fasta_to_dict(
-    '/home/swantje/Dropbox/Arbeit/other_decoys/uniprot-k12-filtered-proteome_UP000000625.fasta')
+fasta_1 = fasta_to_dict('database/uniprot-k12-filtered-proteome_UP000000625.fasta')
 all_proteins = list(fasta_1.keys())
 
 df = pd.read_csv('/home/swantje/Dropbox/Arbeit/other_decoys/proteinprospector/ec1_dsso_CSM_2p_inter.csv')

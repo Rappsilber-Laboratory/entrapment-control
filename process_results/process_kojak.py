@@ -38,8 +38,7 @@ def check_amb_fdr_group(x):
             return 'between'
 
 
-fasta_1 = fasta_to_dict(
-    '/home/swantje/Dropbox/Arbeit/other_decoys/uniprot-k12-filtered-proteome_UP000000625.fasta')
+fasta_1 = fasta_to_dict('database/uniprot-k12-filtered-proteome_UP000000625.fasta')
 all_proteins = list(fasta_1.keys())
 
 df = pd.read_csv('/home/swantje/Dropbox/Arbeit/other_decoys/kojak/Kojak_CSMs_NoLoopLinks.tsv', sep='\t')
