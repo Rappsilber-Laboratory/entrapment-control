@@ -8,6 +8,8 @@ pandas = "*"
 seaborn = "*"
 biopython = "*"
 openpyxl = "*"
+numpy = "*"
+matplotlib = "*"
 
 [dev-packages]
 
