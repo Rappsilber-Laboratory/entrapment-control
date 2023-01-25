@@ -52,3 +52,9 @@ xlinkx_df = df[df['search_engine'] == 'XlinkX']
 ax = plot_distribution(df=xlinkx_df, x='score', bins=50)
 plt.show()
 
+# MeroX
+merox_df = df[df['search_engine'] == 'MeroX']
+ax = plot_distribution(df=merox_df, x='score', bins=50)
+ax.axvline(50, color='black')  # in default settings, this is the minimal score cutoff
+plt.tight_layout()
+plt.show()

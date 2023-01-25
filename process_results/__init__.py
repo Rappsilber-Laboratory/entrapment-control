@@ -5,3 +5,4 @@ from process_results.process_plink2 import process_plink2
 from process_results.process_proteinprospector import process_proteinprospector
 from process_results.process_xisearch import process_xisearch
 from process_results.process_xlinkx import process_xlinkx
+from process_results.process_merox import process_merox

@@ -43,8 +43,12 @@ xlinkx_result_file = os.path.join('search_results', 'xlinkx', '2p_all_files_plus
 xlinkx_decoy_file = os.path.join('search_results', 'xlinkx', '2p_all_files_plus3_DecoyCSMs.txt')
 xlinkx_df = process_xlinkx(xlinkx_result_file, xlinkx_decoy_file, ecoli_proteins)
 
+# MeroX
+merox_result_file = os.path.join('search_results', 'merox', '2p_FDR_230113.csv')
+merox_df = process_merox(merox_result_file, ecoli_proteins)
+
 # concatenate all dataframes
-df = pd.concat([kojak_df, mango_df, plink2_df, pp_df, xisearch_df, xlinkx_df], ignore_index=True)
+df = pd.concat([kojak_df, mango_df, plink2_df, pp_df, xisearch_df, xlinkx_df, merox_df], ignore_index=True)
 
 # save to csv
 df.to_csv(os.path.join('search_results', 'processed_results.csv'), index=False)
