@@ -7,5 +7,6 @@ score_names = {
     'ProteinProspector': 'SVM.score',
     'xiSEARCH': 'Score',
     'XlinkX': 'XlinkX Score',
-    'MeroX': 'Score'
+    'MeroX': 'Score',
+    'OpenPepXL': 'score'
 }

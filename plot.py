@@ -58,3 +58,9 @@ ax = plot_distribution(df=merox_df, x='score', bins=50)
 ax.axvline(50, color='black')  # in default settings, this is the minimal score cutoff
 plt.tight_layout()
 plt.show()
+
+# OpenPepXL
+openpepxl_df = df[df['search_engine'] == 'OpenPepXL']
+ax = plot_distribution(df=openpepxl_df, x='score', bins=50)
+plt.tight_layout()
+plt.show()

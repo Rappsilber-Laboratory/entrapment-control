@@ -6,3 +6,4 @@ from process_results.process_proteinprospector import process_proteinprospector
 from process_results.process_xisearch import process_xisearch
 from process_results.process_xlinkx import process_xlinkx
 from process_results.process_merox import process_merox
+from process_results.process_openpepxl import process_openpepxl
