@@ -5,12 +5,10 @@ Created on Wed Oct 28 08:06:55 2020
 @author: sgiese
 """
 
-import glob
 import pandas as pd
 from tqdm import tqdm
-from pyteomics import mgf, parser, fasta
+from pyteomics import parser, fasta
 import re
-import numpy as np
 
 
 def get_fasta_df(fastaf):
@@ -197,13 +195,9 @@ def get_protein_short(prot):
     return (";".join([i.split("|")[0] for i in prot.replace("sp|", "").split(";")]))
 
 
-def process_plink(result_file):
-    output = result_file.replace(".csv", "_xifdr.csv")
-
+def convert_df(result_file):
     # plink file
     df_plink = pd.read_csv(result_file)
-    df_plink["PSMID"] = np.arange(1, len(df_plink) + 1)
-    print(df_plink.shape)
 
     # this is needed if the filtered data is used as input
     if "filtered_cross-linked_" in result_file:
@@ -215,6 +209,10 @@ def process_plink(result_file):
         df_plink_cl = df_plink[df_plink["Peptide_Type"] == 3]
         df_plink_cl = df_plink_cl.sort_values(by="Q-value", ascending=True)
 
+    print("Group Annotation..")
+    # self, between annotation
+    group_annotation(df_plink_cl)
+
     print("Reorganize Peptide/protein storage...")
     df_plink_cl = split_peptides(df_plink_cl)
     df_plink_cl = split_proteins(df_plink_cl)
@@ -225,15 +223,7 @@ def process_plink(result_file):
     # isTT, isTD, columns
     decoy_type_annotation(df_plink_cl)
 
-    print("Group Annotation..")
-    # self, between annotation
-    group_annotation(df_plink_cl)
-
-    # write normal crosslink dataframe
-
-    df_plink_cl_between = df_plink_cl[(df_plink_cl['Protein_Type'] == 'Inter-Protein') | (df_plink_cl['Protein_Type'] == 2)]
-
-    df_plink_cl.to_csv(output)
+    return df_plink_cl
 
     # # TODO all these are modifications necessary to put it into xifdr for PPIs - taken out for now
     # # FASTA

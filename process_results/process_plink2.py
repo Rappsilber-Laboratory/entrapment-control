@@ -1,5 +1,6 @@
 import pandas as pd
 from plots_and_functions import *
+from process_results.convert_plink_to_xiFDR import convert_df
 
 
 def process_plink2(result_file, unfiltered_result_file, proteins):
@@ -12,7 +13,8 @@ def process_plink2(result_file, unfiltered_result_file, proteins):
     :return: DataFrame with the results
     """
     # read the csv file
-    df = pd.read_csv(result_file)
+    # df = pd.read_csv(result_file)
+    df = convert_df(result_file)
     # '/plink2/DSSO_HumanDB_plinkFDR_xifdr.csv')
     # subset to heteromeric
     df = df[(df['Group'] == 'between')]
@@ -20,7 +22,8 @@ def process_plink2(result_file, unfiltered_result_file, proteins):
     df['1 - Score'] = df['Score'].apply(lambda x: 1. - x)
 
     # read the unfiltered csv file
-    df_with_dec = pd.read_csv(unfiltered_result_file)
+    # df_with_dec = pd.read_csv(unfiltered_result_file)
+    df_with_dec = convert_df(unfiltered_result_file)
     # 'plink2/DSSO_HumanDB_unfiltered_xifdr.csv')
     # subset to heteromeric
     df_with_dec = df_with_dec[(df_with_dec['Group'] == 'between')]
@@ -33,6 +36,9 @@ def process_plink2(result_file, unfiltered_result_file, proteins):
 
     # are protein 1 or protein 2 from E. coli --> gives true / false in separate column
     # if ambiguous match contains an E. coli protein return True
+    # TODO will throw error right now because decoys are nans - will get overwritten later anyway
+    df.loc[df['Protein1'].isnull(), 'Protein1'] = 'decoy'
+    df.loc[df['Protein2'].isnull(), 'Protein2'] = 'decoy'
     df['E1'] = df['Protein1'].apply(find_protein_amb, all_proteins=proteins)
     df['E2'] = df['Protein2'].apply(find_protein_amb, all_proteins=proteins)
 

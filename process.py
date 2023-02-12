@@ -23,9 +23,10 @@ mango_result_file = os.path.join('search_results', 'mango_comet_xlinkprophet',
 mango_df = process_mango_comet_xlinkprophet(mango_result_file, ecoli_proteins)
 
 # pLink2
-plink2_result_file = os.path.join('search_results', 'plink2', 'DSSO_HumanDB_plinkFDR_xifdr.csv')
+plink2_result_file = os.path.join('search_results', 'plink2',
+                                  'LK_2.3.9_cleavable_ecoli_human_2023.01.02.filtered_cross-linked_spectra.csv')
 pllink2_unfiltered_result_file = os.path.join('search_results', 'plink2',
-                                              'DSSO_HumanDB_unfiltered_xifdr.csv')
+                                              'LK_2.3.9_cleavable_ecoli_human_2023.01.02.csv')
 plink2_df = process_plink2(plink2_result_file, pllink2_unfiltered_result_file, ecoli_proteins)
 
 # proteinProspector
