@@ -10,6 +10,8 @@ biopython = "*"
 openpyxl = "*"
 numpy = "*"
 matplotlib = "*"
+tqdm = "*"
+pyteomics = "*"
 
 [dev-packages]
 

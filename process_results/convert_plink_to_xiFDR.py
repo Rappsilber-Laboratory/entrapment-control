@@ -11,35 +11,6 @@ from tqdm import tqdm
 from pyteomics import mgf, parser, fasta
 import re
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-pd.set_option('display.max_columns', 20)
-frac_annot = lambda name, prefix: int(re.search(r"{}(\d+)".format(prefix), name).groups()[0])
-
-
-def add_col_c(x):
-    """Add enumeration for datafram x to column col_c."""
-    x["col_c"] = np.arange(len(x))
-    return x
-
-
-def get_info_duplicates(df_plink_o):
-    """Print information on aggregated results."""
-    print("pLink2 # spectra by a 'unique' filter")
-    print(df_plink_o.shape[0])
-    print("Peptide")
-    print(df_plink_o.drop_duplicates(["Peptide"]).shape[0])
-    print("Peptide-Charge")
-    print(df_plink_o.drop_duplicates(["Peptide", "Charge"]).shape[0])
-    print("Peptide1-Peptide2")
-    print(df_plink_o.drop_duplicates(["Peptide1", "Peptide2"]).shape[0])
-    print("Peptide1-Peptide2-Charge")
-    print(df_plink_o.drop_duplicates(["Peptide1", "Peptide2", "Charge"]).shape[0])
-    print("Peptide1-Peptide2-Positions")
-    print(df_plink_o.drop_duplicates(["Peptide1", "Peptide2", "LinkPos1", "LinkPos2"]).shape[0])
-    print("Peptide1-Peptide2-Charge+LinkPositions")
-    print(df_plink_o.drop_duplicates(["Peptide1", "Peptide2", "Charge", "LinkPos1", "LinkPos2"]).shape[0])
 
 
 def get_fasta_df(fastaf):
@@ -111,27 +82,6 @@ def get_positions(peptide, proteins, proteins_dic):
     proteins_dic: dict, <protein>:<sequence>
     """
     return ";".join([str(proteins_dic[protein_i].index(peptide) + 1) for protein_i in proteins.split(";")])
-
-
-def mgf2csv(filelist):
-    """
-    Function that extracts MS2 information from an mzML/mgf file and stores
-    the results in a handy dataframe.
-
-    Extracted information for MS2:
-        - MS2: scan, rt
-        - precursor: mz, int, mass, charge
-        - meta: machine, raw file
-    """
-    data = {"RT": [], "TITLE": []}
-    for filename_in in tqdm(files):
-        with mgf.read(filename_in) as reader:
-            for spectrum in reader:
-                data["RT"].append(spectrum["params"]["rtinseconds"].real)
-                data["TITLE"].append(spectrum["params"]["title"])
-    data = pd.DataFrame(data)
-    data.set_index("TITLE")
-    return (data)
 
 
 def create_modseq(df_plink_cl):
@@ -247,266 +197,91 @@ def get_protein_short(prot):
     return (";".join([i.split("|")[0] for i in prot.replace("sp|", "").split(";")]))
 
 
-def plot_diag(test):
-    f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(12, 4))
-    ax1.plot(test["Score"], test["Q-value"])
-    ax1.set(xlabel="Score", ylabel="Q-value")
+def process_plink(result_file):
+    output = result_file.replace(".csv", "_xifdr.csv")
 
-    ax2.plot(test["SVM_Score"], test["Q-value"])
-    ax2.set(xlabel="SVM_Score", ylabel="Q-value")
+    # plink file
+    df_plink = pd.read_csv(result_file)
+    df_plink["PSMID"] = np.arange(1, len(df_plink) + 1)
+    print(df_plink.shape)
 
-    ax3.plot(test["Refined_Score"], test["Q-value"])
-    ax3.set(xlabel="Refined_Score", ylabel="Q-value")
-
-    ax4.scatter(test["SVM_Score"], test["Score"])
-    ax4.set(xlabel="SVM_Score", ylabel="Score")
-    plt.tight_layout()
-    plt.show()
-
-    x = df_self["IDType"].value_counts()
-    f, ax = plt.subplots()
-    ax.bar([0, 1, 2], x.values)
-    ax.set(xticks=[0, 1, 2], xticklabels=x.index.values)
-    sns.despine()
-    plt.show()
-
-
-def plink2xifdr(df_plink_input, data, filtered=False):
-    print(df_plink_input.shape)
-    print("Mapping pLink and RT data...")
-    df_plink_input = df_plink_input.merge(data, left_on="Title", right_index=True)
-    df_plink_input["rp"] = df_plink_input["RT"] / 60.
+    # this is needed if the filtered data is used as input
+    if "filtered_cross-linked_" in result_file:
+        df_plink["Peptide_Type"] = 3
+        df_plink_cl = df_plink[df_plink["Peptide_Type"] == 3]
+        df_plink_cl = df_plink_cl.sort_values(by="Score", ascending=False)
+    else:
+        # get crosslinks, only. 0=linear, 1=monolinked, 2=loop-linked, 3=crosslinked
+        df_plink_cl = df_plink[df_plink["Peptide_Type"] == 3]
+        df_plink_cl = df_plink_cl.sort_values(by="Q-value", ascending=True)
 
     print("Reorganize Peptide/protein storage...")
-    df_plink_input = split_peptides(df_plink_input)
-    df_plink_input = split_proteins(df_plink_input)
-    df_plink_input["PepLength1"] = df_plink_input["Peptide1"].apply(len)
-    df_plink_input["PepLength2"] = df_plink_input["Peptide2"].apply(len)
+    df_plink_cl = split_peptides(df_plink_cl)
+    df_plink_cl = split_proteins(df_plink_cl)
+    df_plink_cl["PepLength1"] = df_plink_cl["Peptide1"].apply(len)
+    df_plink_cl["PepLength2"] = df_plink_cl["Peptide2"].apply(len)
 
-    if filtered:
-        # filtered only contains TT
-        df_plink_input["Target_Decoy"] = 2
-        df_plink_input["Protein_Type"] = [1 if i != j else 2 for i, j in zip(df_plink_input["Protein1"],
-                                                                             df_plink_input["Protein2"])]
     print("Decoy Annotation..")
     # isTT, isTD, columns
-    decoy_type_annotation(df_plink_input)
+    decoy_type_annotation(df_plink_cl)
 
     print("Group Annotation..")
     # self, between annotation
-    group_annotation(df_plink_input)
+    group_annotation(df_plink_cl)
 
-    # target / decoy proteins
-    df_plink_input = df_plink_input.merge(df_fasta, left_on="Peptide1", right_index=True, suffixes=("", "_1"))
-    df_plink_input = df_plink_input.merge(df_fasta, left_on="Peptide2", right_index=True, suffixes=("", "_2"))
+    # write normal crosslink dataframe
 
-    # some weird list formatting was introduce .. reavel to single entries
-    df_plink_input["Protein1"] = np.ravel(df_plink_input.Proteins_1)
-    df_plink_input["Protein2"] = np.ravel(df_plink_input.Proteins_2)
-    df_plink_input["Protein1_short"] = df_plink_input["Protein1"].apply(get_protein_short)
-    df_plink_input["Protein2_short"] = df_plink_input["Protein2"].apply(get_protein_short)
+    df_plink_cl_between = df_plink_cl[(df_plink_cl['Protein_Type'] == 'Inter-Protein') | (df_plink_cl['Protein_Type'] == 2)]
 
-    df_plink_input["Decoy1"] = df_plink_input["Protein1"].str.contains("REVERSE")
-    df_plink_input["Decoy2"] = df_plink_input["Protein2"].str.contains("REVERSE")
+    df_plink_cl.to_csv(output)
 
-    # create the modification seqeuences
-    create_modseq(df_plink_input)
-
-    # peptide positions
-    pep_pos1 = np.array([get_positions(pep, prot, proteins_dic) for prot, pep in
-                         zip(df_plink_input["Protein1"], df_plink_input["Peptide1"])])
-
-    pep_pos2 = np.array([get_positions(pep, prot, proteins_dic) for prot, pep in
-                         zip(df_plink_input["Protein2"], df_plink_input["Peptide2"])])
-
-    # assign to dataframe, these are peptide positions! not protein link positions
-    df_plink_input["PSMID"] = np.arange(0, len(df_plink_input))
-    df_plink_input["PepPos1"] = pep_pos1
-    df_plink_input["PepPos2"] = pep_pos2
-    df_plink_input["Description1"] = df_plink_input.Proteins_1
-    df_plink_input["Description2"] = df_plink_input.Proteins_2
-    print(df_plink_input.shape)
-    return df_plink_input
-
-
-# %%
-# =============================================================================
-# config
-# =============================================================================
-# how to
-# 1. adapt the "dir" parameter, thats where the MGFs are located
-# 2. specify the plink input (tested with the unfiltered results file)
-# 3. specify the FASTA file from pLink2 output
-#
-# Step 1 is needed to get the mz / RT information to the pLink2 data.
-# parsing the >100 files takes a bit of time so the data is saved (line 368)
-# by uncommenting the block below after the first execution this step can
-# be skipped.
-
-
-args = {}
-# mgf dir
-# args["dir"] = '/data/rappstore/users/lswantje/ECLP/plink/bs3_ecoli/'
-# args["extension"] = "mgf"
-# # get list of mgfs
-# files = list(glob.iglob("{}/recal*.{}".format('/data/rappstore/users/lswantje/ECLP/searches_TN/BS3/all_mgf', args["extension"])))
-
-print("Running with the following params:")
-for key, value in args.items():
-    print(key, ":", value)
-
-# 1pFDR data
-# ADAPT INPUT DATA HERE
-# plink_input = '/data/rappstore/users/lswantje/ECLP/plink/dsso_ecoli/uniprot-k12-filtered-proteome_UP000000625_2020.12.18.csv' #.filtered_cross-linked_spectra
-plink_input = '/data/rappstore/users/lswantje/ECLP/plink/dsso_human/uniprot-k12FULL_w_HS_entrapment_2021.01.22.filtered_cross-linked_spectra.csv' #
-# 50p FDR data
-# plink_input = r"D:\user\sven\projects_new\depart_clms\psms\pLink23\pLink_ECCP_3DRT_50pFDR\EColi_K12_reviewed_20190828_cbnn_filter_2020.12.09.csv"
-
-# FASTA
-fastaf = "/data/rappstore/users/lswantje/ECLP/plink/uniprot-k12FULL_w_HS_entrapment_comb_rever.fasta"
-output = plink_input.replace(".csv", "_xifdr.csv")
-
-# %%
-# import sys
-#
-# grep 'TITLE\|RTINSECONDS' B181121_09_HF_FW_IN_130_ECLP_DSS01_SCX19_hSAX02_rep2.mgf | awk '{ORS=NR % 2? " ": "\n";print}'
-# get CSV data and write table
-
-# !!!!!!!!!!!!!!!!!!!!!!!
-# comment after first usage
-# !!!!!!!!!!!!!!!!!!!!!!!
-#
-# data = mgf2csv(filelist=files)
-# data = data.set_index("TITLE")
-# data.to_csv(args["dir"] + "_MS2_summary_data_newrecal.csv")
-# data.to_pickle(args["dir"] + "_MS2_summary_data_newrecal.p")
-# print("File written to {}".format(args["dir"] + args["name"] + "_MS2_summary_data.csv"))
-# sys.exit()
-# %%
-# get sequence data peptides, proteins
-print("Sequence analysis...")
-df_fasta = get_fasta_df(fastaf)
-proteins_dic = get_protein_dic(fastaf)
-
-# map plink retention times
-# print("Reading pLink and RT data...")
-# data = pd.read_pickle(args["dir"] + "DSS_recal_MS2_summary_data_newrecal.p")
-# plink file
-df_plink = pd.read_csv(plink_input)
-df_plink["PSMID"] = np.arange(1, len(df_plink) + 1)
-print(df_plink.shape)
-
-# this is needed if the filtered data is used as input
-if "filtered_cross-linked_" in plink_input:
-    df_plink["Peptide_Type"] = 3
-    df_plink_cl = df_plink[df_plink["Peptide_Type"] == 3]
-    df_plink_cl = df_plink_cl.sort_values(by="Score", ascending=False)
-else:
-    # get crosslinks, only. 0=linear, 1=monolinked, 2=loop-linked, 3=crosslinked
-    df_plink_cl = df_plink[df_plink["Peptide_Type"] == 3]
-    df_plink_cl = df_plink_cl.sort_values(by="Q-value", ascending=True)
-
-# print("Mapping pLink and RT data...")
-# df_plink_cl = df_plink_cl.merge(data, left_on="Title", right_index=True)
-# df_plink_cl["rp"] = df_plink_cl["RT"] / 60.
-
-print("Reorganize Peptide/protein storage...")
-df_plink_cl = split_peptides(df_plink_cl)
-df_plink_cl = split_proteins(df_plink_cl)
-df_plink_cl["PepLength1"] = df_plink_cl["Peptide1"].apply(len)
-df_plink_cl["PepLength2"] = df_plink_cl["Peptide2"].apply(len)
-
-print("Decoy Annotation..")
-# isTT, isTD, columns
-decoy_type_annotation(df_plink_cl)
-
-print("Group Annotation..")
-# self, between annotation
-group_annotation(df_plink_cl)
-
-# target / decoy proteins
-df_plink_cl = df_plink_cl.merge(df_fasta, left_on="Peptide1", right_index=True, suffixes=("", "_1"))
-df_plink_cl = df_plink_cl.merge(df_fasta, left_on="Peptide2", right_index=True, suffixes=("", "_2"))
-
-# some weird list formatting was introduce .. reavel to single entries
-df_plink_cl["Protein1"] = np.ravel(df_plink_cl.Proteins_1)
-df_plink_cl["Protein2"] = np.ravel(df_plink_cl.Proteins_2)
-
-df_plink_cl["Protein1_short"] = df_plink_cl["Protein1"].apply(get_protein_short)
-df_plink_cl["Protein2_short"] = df_plink_cl["Protein2"].apply(get_protein_short)
-
-df_plink_cl["Decoy1"] = df_plink_cl["Protein1"].str.contains("REVERSE")
-df_plink_cl["Decoy2"] = df_plink_cl["Protein2"].str.contains("REVERSE")
-
-# create the modification seqeuences
-print("Creating Modified Sequences...")
-create_modseq(df_plink_cl)
-
-# peptide positions
-pep_pos1 = np.array([get_positions(pep, prot, proteins_dic) for prot, pep in
-                     zip(df_plink_cl["Protein1"], df_plink_cl["Peptide1"])])
-
-pep_pos2 = np.array([get_positions(pep, prot, proteins_dic) for prot, pep in
-                     zip(df_plink_cl["Protein2"], df_plink_cl["Peptide2"])])
-
-# assign to dataframe, these are peptide positions! not protein link positions
-df_plink_cl["PepPos1"] = pep_pos1
-df_plink_cl["PepPos2"] = pep_pos2
-df_plink_cl["Description1"] = df_plink_cl.Proteins_1
-df_plink_cl["Description2"] = df_plink_cl.Proteins_2
-df_plink_cl["Fasta1"] = df_plink_cl.Proteins_1
-df_plink_cl["Fasta2"] = df_plink_cl.Proteins_2
-df_plink_cl["Run"] = df_plink_cl["Title"]
-try:
-    df_plink_cl["exp m/z"] = df_plink_cl["Precursor_MH"] / df_plink_cl["Charge"]
-except KeyError:
-    df_plink_cl["Precursor_MH"] = df_plink_cl["Precursor_Mass"]
-    df_plink_cl["exp m/z"] = df_plink_cl["Precursor_MH"] / df_plink_cl["Charge"]
-
-# df_plink_cl["scx"] = df_plink_cl["Run"].apply(frac_annot, args=("SCX",))
-# df_plink_cl["hsax"] = df_plink_cl["Run"].apply(frac_annot, args=("hSAX",))
-# write normal crosslink dataframe
-
-possible_interactions = pd.read_csv('/data/rappstore/users/lswantje/ECLP/searches_TN/jan20_ppi_ID2_43E5.txt',
-                                    sep='\t', header=None)
-possible_interactions.columns = ['Protein1', 'Protein2']
-possible_interactions['name'] = possible_interactions.apply(lambda x: '-'.join(x.tolist()), axis=1)
-df_plink_cl_between = df_plink_cl[(df_plink_cl['Protein_Type'] == 'Inter-Protein') | (df_plink_cl['Protein_Type'] == 2)]
-df_plink_cl_between['name'] = df_plink_cl_between[['Protein1_short', 'Protein2_short']].apply(lambda x:
-                                                '-'.join(sorted([x['Protein1_short'], x['Protein2_short']])), axis=1)
-n_wrong = sum(~df_plink_cl_between['name'].isin(possible_interactions['name'].tolist())) * 1.09
-print(sum(((df_plink_cl_between['Decoy1']) | (df_plink_cl_between['Decoy2'])) &
-          ((df_plink_cl['Protein_Type'] == 'Inter-Protein') | (df_plink_cl['Protein_Type'] == 2))))
-print(n_wrong/len(df_plink_cl_between))
-
-df_plink_cl.to_csv(output)
-
-# filtered by qvalue to reduce size
-try:
-    df_plink_cl_qf = df_plink_cl[df_plink_cl["Q-value"] <= 0.5]
-    # df_plink_cl_qf["fdr"] = df_plink_cl_qf["Q-value"]
-    # df_plink_cl_qf["score"] = df_plink_cl_qf["SVM_Score"]
-    df_plink_cl_qf['qval_inv'] = df_plink_cl_qf['Q-value'].apply(lambda x: 10 - (10 * x))
-except KeyError:
-    df_plink_cl_qf = df_plink_cl
-    df_plink_cl_qf['qval_inv'] = df_plink_cl_qf['Score'].apply(lambda x: 10 - (10 * x))
-
-df_plink_cl_qf.to_csv(output.replace(".csv", "plink_qval05.csv"))
-
-# print(df_plink_cl.shape)
-# print(df_plink_cl_qf.shape)
-#
-# # %%
-# # import matplotlib.pyplot as plt
-# # test = df_plink_cl_qf[df_plink_cl_qf["Q-value"] <= 0.05]
-# # test = test[test["Protein1"] != test["Protein2"]]
-# # test = test.sort_values(by="Q-value", ascending=True)
-# # print(test.shape)
-# ##Refined_Score  SVM_Score         Score
-# # sns.lineplot(x="Q-value", y="Refined_Score", data=test)
-# # plt.show()
-# # sns.lineplot(x="Q-value", y="SVM_Score", data=test)
-# # plt.axvline(0.01)
-# # plt.show()
-# # sns.lineplot(x="Q-value", y="Score", data=test)
-# # plt.show()
+    # # TODO all these are modifications necessary to put it into xifdr for PPIs - taken out for now
+    # # FASTA
+    # fastaf = "/Users/lenz/Documents/entrapment-control/database/ecoli+entrapment+decoys.fasta"
+    #
+    # # get sequence data peptides, proteins
+    # print("Sequence analysis...")
+    # df_fasta = get_fasta_df(fastaf)
+    # proteins_dic = get_protein_dic(fastaf)
+    #
+    # # target / decoy proteins
+    # df_plink_cl = df_plink_cl.merge(df_fasta, left_on="Peptide1", right_index=True, suffixes=("", "_1"))
+    # df_plink_cl = df_plink_cl.merge(df_fasta, left_on="Peptide2", right_index=True, suffixes=("", "_2"))
+    #
+    # # some weird list formatting was introduce .. reavel to single entries
+    # df_plink_cl["Protein1"] = np.ravel(df_plink_cl.Proteins_1)
+    # df_plink_cl["Protein2"] = np.ravel(df_plink_cl.Proteins_2)
+    #
+    # df_plink_cl["Protein1_short"] = df_plink_cl["Protein1"].apply(get_protein_short)
+    # df_plink_cl["Protein2_short"] = df_plink_cl["Protein2"].apply(get_protein_short)
+    #
+    # # TODO this does not take into account ambiguity - needs fixing
+    # df_plink_cl["Decoy1"] = df_plink_cl["Protein1"].str.contains("REVERSE")
+    # df_plink_cl["Decoy2"] = df_plink_cl["Protein2"].str.contains("REVERSE")
+    #
+    # #(((df_plink_cl['Decoy2'] + df_plink_cl['Decoy1']) == 0) == (df_plink_cl['isTT'])).all()
+    #
+    # # create the modification seqeuences
+    # print("Creating Modified Sequences...")
+    # create_modseq(df_plink_cl)
+    #
+    # # peptide positions
+    # pep_pos1 = np.array([get_positions(pep, prot, proteins_dic) for prot, pep in
+    #                      zip(df_plink_cl["Protein1"], df_plink_cl["Peptide1"])])
+    #
+    # pep_pos2 = np.array([get_positions(pep, prot, proteins_dic) for prot, pep in
+    #                      zip(df_plink_cl["Protein2"], df_plink_cl["Peptide2"])])
+    #
+    # # assign to dataframe, these are peptide positions! not protein link positions
+    # df_plink_cl["PepPos1"] = pep_pos1
+    # df_plink_cl["PepPos2"] = pep_pos2
+    # df_plink_cl["Description1"] = df_plink_cl.Proteins_1
+    # df_plink_cl["Description2"] = df_plink_cl.Proteins_2
+    # df_plink_cl["Fasta1"] = df_plink_cl.Proteins_1
+    # df_plink_cl["Fasta2"] = df_plink_cl.Proteins_2
+    # df_plink_cl["Run"] = df_plink_cl["Title"]
+    # try:
+    #     df_plink_cl["exp m/z"] = df_plink_cl["Precursor_MH"] / df_plink_cl["Charge"]
+    # except KeyError:
+    #     df_plink_cl["Precursor_MH"] = df_plink_cl["Precursor_Mass"]
+    #     df_plink_cl["exp m/z"] = df_plink_cl["Precursor_MH"] / df_plink_cl["Charge"]
