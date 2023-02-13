@@ -53,14 +53,15 @@ def find_protein_amb(protein, all_proteins):
             return False
 
 
-def plot_distribution(df, x, bins, ylim_top=None):
+def plot_distribution(df, x, bins, ylim_top=None, ax=None):
     palette = sns.color_palette(['#8CCFC0', '#83320C', '#E364B4'])
     df['ID_type'] = df['entr_group']
-    fig, ax = plt.subplots()
+    if ax is None:
+        fig, ax = plt.subplots()
     sns.histplot(data=df, x=x, hue='ID_type', element="step", bins=bins, linewidth=1.7,
                  # hist_kws={"linewidth": 5, "alpha": 1},
-                 hue_order=['E.coli', 'decoy', 'entrapment'], palette=palette)
+                 hue_order=['E.coli', 'decoy', 'entrapment'], palette=palette, ax=ax)
     if ylim_top:
-        plt.ylim(top=ylim_top)
+        ax.set_ylim(top=ylim_top)
     # plt.show()
     return ax
