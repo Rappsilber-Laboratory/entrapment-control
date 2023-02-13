@@ -80,9 +80,10 @@ ylim_top = {
 # plt.show()
 
 # combined plot: all scores in one plot
+df.sort_values(by='search_engine', inplace=True, key=lambda x: x.str.lower())
 fig, ax = plt.subplots(int(df['search_engine'].nunique()/2), 2, figsize=(10, 12))
 ax = ax.flatten()
-for i, (search_engine, group) in enumerate(df.groupby('search_engine')):
+for i, (search_engine, group) in enumerate(df.groupby('search_engine', sort=False)):
     plot_distribution(df=group, x=score_names[search_engine], bins=50, ax=ax[i], ylim_top=ylim_top[search_engine])
     ax[i].set_xlabel(f'{search_engine} ({score_names[search_engine]})')
     if i % 2 == 1:
