@@ -3,7 +3,7 @@ from plots_and_functions import *
 from process_results.convert_plink_to_xiFDR import convert_df
 
 
-def process_plink2(result_file, unfiltered_result_file, proteins):
+def process_plink2(result_file, unfiltered_result_file, proteins, td_fasta_dict):
     """
     Process the results of pLink2.
 
@@ -12,7 +12,7 @@ def process_plink2(result_file, unfiltered_result_file, proteins):
     :param proteins: list of all proteins in the database
     :return: DataFrame with the results
     """
-    # read the csv file
+    all_peptide_proteins,all_peptide_positions = digest_proteins_tryptic(td_fasta_dict,missed_cleavages=4,min_length=1,max_length=80)    # read the csv file
     # df = pd.read_csv(result_file)
     df = convert_df(result_file)
     # '/plink2/DSSO_HumanDB_plinkFDR_xifdr.csv')
@@ -33,6 +33,20 @@ def process_plink2(result_file, unfiltered_result_file, proteins):
     # concat the two dataframes
     df = pd.concat([df, df_with_dec[
         (~df_with_dec['isTT']) & (df_with_dec['1 - Score'] >= df['1 - Score'].min())]])
+    
+    #df.loc[df["PepPos1"].isna(),["Protein1","PepPos1"]] = \
+    #    df.loc[df["PepPos1"].isna(),"Peptide1"].apply(find_peptide_positions,fasta_dict=td_fasta_dict)
+    #df.loc[df["PepPos2"].isna(),["Protein2","PepPos2"]] = \
+    #    df.loc[df["PepPos2"].isna(),"Peptide2"].apply(find_peptide_positions,fasta_dict=td_fasta_dict)
+    df.loc[df["PepPos1"].isna(),"Protein1"] = \
+        df.loc[df["PepPos1"].isna(),"Peptide1"].apply(lambda x: ";".join(all_peptide_proteins[x]))
+    df.loc[df["PepPos1"].isna(),"PepPos1"] = \
+        df.loc[df["PepPos1"].isna(),"Peptide1"].apply(lambda x: ";".join(all_peptide_positions[x]))
+    df.loc[df["PepPos2"].isna(),"Protein2"] = \
+        df.loc[df["PepPos2"].isna(),"Peptide2"].apply(lambda x: ";".join(all_peptide_proteins[x]))
+    df.loc[df["PepPos2"].isna(),"PepPos2"] = \
+        df.loc[df["PepPos2"].isna(),"Peptide2"].apply(lambda x: ";".join(all_peptide_positions[x]))
+
 
     # are protein 1 or protein 2 from E. coli --> gives true / false in separate column
     # if ambiguous match contains an E. coli protein return True

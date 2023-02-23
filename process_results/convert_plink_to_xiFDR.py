@@ -10,6 +10,8 @@ from tqdm import tqdm
 from pyteomics import parser, fasta
 import re
 
+from plots_and_functions import find_peptide_positions
+
 
 def get_fasta_df(fastaf):
     """
@@ -159,9 +161,27 @@ def split_peptides(df_plink_cl):
 
 def split_proteins(df_plink_cl):
     regex = re.compile(r"(\S+) \((\d+)\)-(\S+) \((\d+)\)")
-    df_info = df_plink_cl["Proteins"].str.extract(regex)
+    # extract proteins
+    df_proteins = df_plink_cl[['Proteins']][df_plink_cl['Proteins'].notna()]
+    # make sure we keep the original index
+    df_proteins['PIndex'] = df_plink_cl[['Proteins']][df_plink_cl['Proteins'].notna()].index
+
+    df_proteins = df_proteins.assign(Proteins=df_proteins.Proteins.str.split(r'/(?=.)', regex=True)).explode("Proteins")
+    df_info = df_proteins['Proteins'].str.extract(regex)
     df_info.columns = ["Protein1", "PepPos1", "Protein2", "PepPos2"]
-    df_plink_cl = df_plink_cl.join(df_info)
+    df_info['Index'] = df_info.index
+    df_info.reset_index(drop=True, inplace=True)
+    df_proteins.reset_index(drop=True, inplace=True)
+    df_proteins = df_proteins.join(df_info, rsuffix='index', lsuffix='index')
+    assert all(df_proteins.PIndex == df_proteins.Index)
+    df_proteins_gb = df_proteins.groupby('Index')
+
+    df_proteins = df_proteins_gb.agg(
+        {'Protein1': lambda x: ";".join(x), 'PepPos1': lambda x: ";".join(x.astype(str)),
+         'Protein2': lambda x: ";".join(x), 'PepPos2': lambda x: ";".join(x.astype(str)),
+         'Index' : 'first'})
+    df_proteins.set_index('Index', inplace=True)
+    df_plink_cl = df_plink_cl.join(df_proteins)
     return df_plink_cl
 
 
@@ -216,6 +236,7 @@ def convert_df(result_file):
     print("Reorganize Peptide/protein storage...")
     df_plink_cl = split_peptides(df_plink_cl)
     df_plink_cl = split_proteins(df_plink_cl)
+    
     df_plink_cl["PepLength1"] = df_plink_cl["Peptide1"].apply(len)
     df_plink_cl["PepLength2"] = df_plink_cl["Peptide2"].apply(len)
 

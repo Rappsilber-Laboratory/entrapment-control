@@ -9,7 +9,7 @@ import pandas as pd
 ecoli_fasta = fasta_to_dict('database/uniprot-k12-filtered-proteome_UP000000625.fasta')
 # read in uniprot IDs of E. coli as list
 ecoli_proteins = list(ecoli_fasta.keys())
-
+full_fasta = fasta_to_dict('database/ecoli_human_comb_rever.fasta')
 #
 # process the results
 #
@@ -27,7 +27,7 @@ plink2_result_file = os.path.join('search_results', 'plink2',
                                   'LK_2.3.9_cleavable_ecoli_human_2023.01.02.filtered_cross-linked_spectra.csv')
 pllink2_unfiltered_result_file = os.path.join('search_results', 'plink2',
                                               'LK_2.3.9_cleavable_ecoli_human_2023.01.02.csv')
-plink2_df = process_plink2(plink2_result_file, pllink2_unfiltered_result_file, ecoli_proteins)
+plink2_df = process_plink2(plink2_result_file, pllink2_unfiltered_result_file, ecoli_proteins, full_fasta)
 
 # proteinProspector
 pp_result_file = os.path.join('search_results', 'proteinprospector', 'ec1_dsso_CSM_2p_inter.csv')
