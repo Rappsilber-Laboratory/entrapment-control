@@ -1,5 +1,5 @@
 import pandas as pd
-from plots_and_functions import fasta_to_dict, find_protein_amb
+from plots_and_functions import find_protein_amb
 
 
 def process_xisearch(result_file, proteins):
@@ -11,7 +11,7 @@ def process_xisearch(result_file, proteins):
     :return: DataFrame with the results
     """
     # read the csv file
-    df = pd.read_csv(result_file, thousands=',')
+    df = pd.read_csv(result_file, thousands=',', low_memory=False)
     # subset to heteromeric
     df = df[df.fdrGroup.str.contains('etween')]
 
@@ -32,6 +32,7 @@ def process_xisearch(result_file, proteins):
 
     # mark TD and DD as decoys
     df.loc[((df['isTD']) | (df['isDD'])), 'entr_group'] = 'decoy'
+    df['decoy'] = df['entr_group'] == 'decoy'
 
     # add score column
     df['score'] = df['Score']

@@ -11,10 +11,10 @@ def check_amb_fdr_group(x):
     """
     prot1, prot2 = x['alpha_Proteins'], x['beta_Proteins']
     if ';' in prot1:
-        proteins_1 = prot1.split(';')
+        proteins_1 = prot1.replace("REV_", "").split(';')
         for prot1_i in proteins_1:
             if ';' in prot2:
-                proteins_2 = prot2.split(';')
+                proteins_2 = prot2.replace("REV_", "").split(';')
                 if prot1_i in proteins_2:
                     return 'self'
                 else:
@@ -25,10 +25,10 @@ def check_amb_fdr_group(x):
                 else:
                     return 'between'
     elif ';' in prot2:
-        proteins_2 = prot2.split(';')
+        proteins_2 = prot2.replace("REV_", "").split(';')
         for prot2_i in proteins_2:
             if ';' in prot1:
-                proteins_1 = prot1.split(';')
+                proteins_1 = prot1.replace("REV_", "").split(';')
                 if prot2_i in proteins_1:
                     return 'self'
                 else:
@@ -45,7 +45,7 @@ def check_amb_fdr_group(x):
             return 'between'
 
 
-def process_kojak(result_file, proteins):
+def process_kojak(result_file, proteins, fasta):
     """
     Process the results of Kojak.
 
@@ -53,11 +53,32 @@ def process_kojak(result_file, proteins):
     :param proteins: list of all proteins in the database
     :return: DataFrame with the results
     """
+
+    # read in the fasta file
+    proteins = SeqIO.parse(fasta, "fasta")
+    
+    prot_array = []
+    decoy_to_target = {}
+    # match decoy to target
+    for prot_id, protein in enumerate(proteins):
+        prot_array.append(protein.id)
+        if 'decoy' in protein.id.lower() or 'reverse' in protein.id.lower():
+            decoy_to_target[protein.id] = prot_array[prot_id - 1]
+
+
+
     # read the csv file
     df = pd.read_csv(result_file, sep='\t')
 
+    # actually result file does not contain any overlap of target and decoy for a single peptide
+    # so no need to check for ambiguous matches when looking for decoys
     df['decoy1'] = df['alpha_Proteins'].str.contains('DECOY')
-    df['decoy2'] = df['beta_Proteins'].str.contains('DECOY')  # if ambiguous will count as decoy
+    df['decoy2'] = df['beta_Proteins'].str.contains('DECOY')  
+
+
+    # convert to matchable proteins
+    df['alpha_Proteins'] = df['alpha_Proteins'].apply(lambda x: ";".join(["REV_" + decoy_to_target[y] if y in decoy_to_target else y for y in x.split(";")]))
+    df['beta_Proteins'] = df['beta_Proteins'].apply(lambda x: ";".join(["REV_" + decoy_to_target[y] if y in decoy_to_target else y for y in x.split(";")]))
 
     # subset to heteromeric
     df['fdrGroup'] = df.apply(check_amb_fdr_group, axis=1)
@@ -86,9 +107,30 @@ def process_kojak(result_file, proteins):
 
     # add search engine column
     df['search_engine'] = 'Kojak'
+    df['isTT'] = ~(df['decoy1'] | df['decoy2'])
+    df['isDD'] = df['decoy1'] & df['decoy2']
+    df['isTD'] = ~(df['isTT'] | df['isDD'])
 
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment'] / summary_table['decoy']
     # # summary_table.to_csv('kojak.csv')
+
+    df.reset_index(inplace=True)
+    df["PSMID"] = ["Kojak_" + str(x) for x in df.index]
+
+    # convert "alpha_Pep_Link" and "alpha_Prot_Link" into peptide position
+    df["PepPos1"]=df[["alpha_Pep_Link","alpha_Prot_Link"]].apply(
+        lambda x : ";".join([str(int(i) -x[0]+1) for i in x[1].split(";")]), axis=1 ) 
+    df["PepPos2"]=df[["beta_Pep_Link","beta_Prot_Link"]].apply(
+        lambda x : ";".join([str(int(i) -x[0]+1) for i in x[1].split(";")]), axis=1 ) 
+    # rename some columns - so they can be read directly by xiFDR
+    df.rename(columns={"alpha_Proteins": "Protein1",
+               "beta_Proteins": "Protein2",
+               "alpha_Peptide": "peptide1",
+               "beta_Peptide": "peptide2",
+               "alpha_Pep_Link": "LinkPos1",
+               "beta_Pep_Link": "LinkPos2",
+               "Z": "precursor_charge"}, inplace=True)
+    
 
     return df

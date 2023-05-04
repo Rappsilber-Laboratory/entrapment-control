@@ -77,11 +77,12 @@ def process_merox(result_file, proteins):
     df['entr_group'] = df['entr_group'].replace({2: 'E.coli', 1: 'entrapment', 0: 'entrapment'})
 
     # mark TD and DD as decoys
-    df['Protein1decoy'] = df['Protein 1'].str.contains('DEC')
-    df['Protein2decoy'] = df['Protein 2'].str.contains('DEC')
-    df['isDD'] = ((df['Protein1decoy'] == True) & (df['Protein2decoy'] == True))
-    df['isTD'] = ((df['Protein1decoy'] == True) | (df['Protein2decoy'] == True)) \
-                 & (~((df['Protein1decoy'] == True) & (df['Protein2decoy'] == True)))
+    df['isDecoy1'] = df['Protein 1'].str.startswith('DEC_')
+    df['isDecoy2'] = df['Protein 2'].str.startswith('DEC_')
+    df['isDD'] = ((df['isDecoy1'] == True) & (df['isDecoy2'] == True))
+    df['isTD'] = ((df['isDecoy1'] == True) | (df['isDecoy2'] == True)) \
+                 & (~((df['isDecoy1'] == True) & (df['isDecoy2'] == True)))
+    df['isTT'] = ((df['isDecoy1'] == False) & (df['isDecoy2'] == False))
     df.loc[((df['isTD']) | (df['isDD'])), 'entr_group'] = 'decoy'
 
     # add score column
@@ -89,5 +90,24 @@ def process_merox(result_file, proteins):
 
     # add search engine column
     df['search_engine'] = 'MeroX'
+    df.reset_index(inplace=True)
+    df["PSMID"] = ["MeroX_" + str(x) for x in df.index]
+
+    # convert protein 1 and protein2 into a format that xiFDR can handle
+    df['name1'] = df['Protein 1'].str.replace(r'(?:DEC_)?>sp\|(?:[^|]*\|([^\s]*).*)',"\\1",regex=True)
+    df['name2'] = df['Protein 2'].str.replace(r'(?:DEC_)?>sp\|(?:[^|]*\|([^\s]*).*)',"\\1",regex=True)
+    df['description1'] = df['Protein 1'].str.replace(r'(?:DEC_)?>sp\|(?:[^|]*\|(?:[^\s]*)\s(.*))',"\\1",regex=True)
+    df['description2'] = df['Protein 2'].str.replace(r'(?:DEC_)?>sp\|(?:[^|]*\|(?:[^\s]*)\s(.*))',"\\1",regex=True)
+    # get reduce the name
+    df['Protein1'] = df['Protein 1'].str.replace("(?:DEC_)?>sp\|([^\|]*).*","\\1",regex=True)
+    df['Protein2'] = df['Protein 2'].str.replace("(?:DEC_)?>sp\|([^\|]*).*","\\1",regex=True)
+    df['Protein1'].loc[df['isDecoy1']]='REV_' + df['Protein1'][df['isDecoy1']]
+    df['Protein2'].loc[df['isDecoy2']]='REV_' + df['Protein2'][df['isDecoy2']]
+    df['LinkPos1'] = df['best linkage position peptide 1'].str.slice(1)
+    df['LinkPos2'] = df['best linkage position peptide 2'].str.slice(1)
+    df['PepPos1'] = df["From"]
+    df['PepPos2'] = df["From.1"]
+    df['PepPos1'].loc[df['PepPos1']==0] = 1
+    df['PepPos2'].loc[df['PepPos2']==0] = 1
 
     return df

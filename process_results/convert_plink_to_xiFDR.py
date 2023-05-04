@@ -160,7 +160,7 @@ def split_peptides(df_plink_cl):
 
 
 def split_proteins(df_plink_cl):
-    regex = re.compile(r"(\S+) \((\d+)\)-(\S+) \((\d+)\)")
+    regex = re.compile(r"sp\|(\S+)\|[^ ]* \((\d+)\)-sp\|(\S+)\|[^ ]* \((\d+)\)")
     # extract proteins
     df_proteins = df_plink_cl[['Proteins']][df_plink_cl['Proteins'].notna()]
     # make sure we keep the original index

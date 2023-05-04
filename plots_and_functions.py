@@ -13,10 +13,14 @@ def reverse_fasta(fasta_dict, KRSwap=False):
     :return: dictionary with fasta headers as keys and sequences as values
     """
     record_dict = {}
+    # Loop through the fasta dictionary
     for key, value in fasta_dict.items():
+        # Reverse complement the sequence
         reversed = value.reverse_complement()
+        # Optionally swap K and R residues
         if KRSwap:
             reversed = reversed.replace('K', 'X').replace('R', 'K').replace('X', 'R')
+        # Add the reversed sequence to the dictionary
         record_dict['REV_' + key] = reversed
     return record_dict
 
@@ -68,7 +72,7 @@ def fasta_to_dict(fasta_file, exclude=None):
 
     for key, value in record_dict_old.items():
         if 'decoy' in key.lower() or 'reverse' in key.lower():
-            new = 'DECOY_' + key.split('|')[1]
+            new = 'REV_' + key.split('|')[1]
         else:
             new = key.split('|')[1]
         if (exclude is not None) and (new in exclude):
@@ -76,6 +80,7 @@ def fasta_to_dict(fasta_file, exclude=None):
             del record_dict[key]
         else:
             record_dict[new] = value
+            # protein prospector stores the protein description for decoys but not the protein - hence the additional lookup here
             del record_dict[key]
     return record_dict
 
