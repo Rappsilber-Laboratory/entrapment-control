@@ -1,5 +1,4 @@
 import pandas as pd
-import re
 from plots_and_functions import fasta_to_dict, find_protein_amb
 
 
@@ -17,7 +16,7 @@ def process_openpepxl(result_file, proteins):
     # remove mono-links
     df = df[df['xl_type'] == 'cross-link']
 
-    # subset to heteromeric
+    # subset to unambigiously heteromeric links
     df = df[(df['XFDR:is_interprotein'] == True) & (df['XFDR:is_intraprotein'] == False)]
 
     # are protein 1 or protein 2 from E. coli --> gives true / false in separate column

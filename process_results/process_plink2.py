@@ -3,7 +3,8 @@ from plots_and_functions import *
 from process_results.convert_plink_to_xiFDR import convert_df
 
 
-def process_plink2(result_file, unfiltered_result_file, proteins, all_peptide_proteins,all_peptide_positions):
+def process_plink2(result_file, unfiltered_result_file, proteins, all_peptide_proteins,
+                   all_peptide_positions):
     """
     Process the results of pLink2.
 

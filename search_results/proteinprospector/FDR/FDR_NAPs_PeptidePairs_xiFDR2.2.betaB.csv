@@ -1,0 +1,2 @@
+PeptidePairID,PSMIDs,Protein1,Name1,Description1,Decoy1,Protein2,Name2,Description2,Decoy2,Peptide1,Peptide2,Start1,Start2,FromSite,ToSite,FromProteinSite,ToProteinSite,psmID,Crosslinker,Score,isDecoy,isTT,isTD,isDD,fdrGroup,fdr,ifdr,PEP,,Protein1FDR,Protein2FDR,LinkFDR,PPIFDR,,link id,ppi id,
+0,ProteinProspector2653,P0AEH5,,Protein ElaB,false,P64581,P64581,Uncharacterized protein YqjD,false,MSNQFGDTR,MSKEHTTEHLR,1,1,0,0,,,TT - T - MSNQFGDTR xl T - MSKEHTTEHLR,,3.68,false,true,false,false,Between > 4 NonCovalent,0,0,0,,0.152,0.109,,,,,,3.68

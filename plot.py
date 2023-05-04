@@ -6,7 +6,7 @@ from matplotlib.ticker import MaxNLocator
 # import numpy as np
 from score_names import score_names
 import seaborn as sns
-
+import math
 
 
 
@@ -25,8 +25,8 @@ def combined_plot(df, ylim_top, out_name):
     """
     # combined plot: all scores in one plot
     df.sort_values(by='search_engine', inplace=True, key=lambda x: x.str.lower())
-    fig, ax = plt.subplots(int(df['search_engine'].nunique()/2), 4, figsize=(12, 12),
-                        gridspec_kw={'width_ratios': [1, 0.1, 1, 0.1]})
+    fig, ax = plt.subplots(math.ceil(df['search_engine'].nunique()/2), 4, figsize=(12, 12),
+                           gridspec_kw={'width_ratios': [1, 0.1, 1, 0.1]})
     ax = ax.flatten()
     i = 0
     summary = []
@@ -93,17 +93,17 @@ def combined_plot(df, ylim_top, out_name):
         entr_based_error = ENTRAP_FP / TT * 100
 
         sns.barplot(x=['D'+note, 'E'], y=[decoy_based_error, entr_based_error], ax=ax[i],
-                    palette=sns.color_palette(['#83320C', '#EB92CA']))
-        sns.barplot(x=['D'+note, 'E'], y=[decoy_based_error, ENTRAP_TOTAL / TT * 100], ax=ax[i],
                     palette=sns.color_palette(['#83320C', '#E364B4']))
+        # sns.barplot(x=['D'+note, 'E'], y=[decoy_based_error, ENTRAP_TOTAL / TT * 100], ax=ax[i],
+        #             palette=sns.color_palette(['#83320C', '#E364B4']))
         ax[i].spines[['right', 'top']].set_visible(False)
         if entr_based_error < 8:
             ax[i].set_ylim(0, 8)
         else:
-            ax[i].set_ylim(0, round(entr_based_error))
+            ax[i].set_ylim(0, math.ceil(entr_based_error/2)*2)
         ax[i].axhline(2, color='black', linestyle='--')
         ax[i].yaxis.set_major_locator(MaxNLocator(nbins=4))
-        ax[i].yaxis.set_minor_locator(MaxNLocator(nbins=8))
+        # ax[i].yaxis.set_minor_locator(MaxNLocator(nbins=8))
         ax[i].set_ylabel('error [%]')
         i += 1
 
@@ -146,7 +146,7 @@ def bar_plots(df_csm, df_peppair, df_respair, df_ppi, out_name):
 
 
     # combined plot: all scores in one plot
-    fig, ax = plt.subplots(int(df['search_engine'].nunique()/2), 2, figsize=(12, 12))
+    fig, ax = plt.subplots(math.ceil(df['search_engine'].nunique()/2), 2, figsize=(12, 12))
     ax = ax.flatten()
     i = 0
     summary = []
@@ -243,7 +243,8 @@ def bar_plots(df_csm, df_peppair, df_respair, df_ppi, out_name):
 ylim_top = {
     'Kojak': 100,
     'MangoCometXlinkProphet': 300,
-    'pLink2': 120,
+    'pLink2_cleav': 120,
+    'pLink2_nonCleav': 120,
     'ProteinProspector': 300,
     'xiSEARCH': 50,
     'XlinkX': None,
@@ -269,12 +270,13 @@ out_name = os.path.join('plots', 'all_scores_from_ppi')
 out_name_ppi = os.path.join('plots', 'all_ppi_scores_from_ppi')
 out_name_bar = os.path.join('plots', 'all_levels_from_ppi')
 
-df_ppi2csm = pd.read_csv(os.path.join('search_results', 'ppi_processed_CSM_results.csv'))
-df_ppi2peppair = pd.read_csv(os.path.join('search_results', 'processed_peppair_results.csv'))
-df_ppi2respair = pd.read_csv(os.path.join('search_results', 'processed_respair_results.csv'))
-df_ppi2ppi = pd.read_csv(os.path.join('search_results', 'ppi_processed_ppi_results.csv'))
-
-combined_plot(df_ppi2csm, ylim_top, out_name).to_csv(out_name + ".csv")
-combined_plot(df_ppi2ppi, ylim_top, out_name_ppi).to_csv(out_name_ppi + ".csv")
-
-bar_plots(df_ppi2csm, df_ppi2peppair, df_ppi2respair, df_ppi2ppi, out_name_bar)
+# ToDo: no used for now
+# df_ppi2csm = pd.read_csv(os.path.join('search_results', 'ppi_processed_CSM_results.csv'))
+# df_ppi2peppair = pd.read_csv(os.path.join('search_results', 'processed_peppair_results.csv'))
+# df_ppi2respair = pd.read_csv(os.path.join('search_results', 'processed_respair_results.csv'))
+# df_ppi2ppi = pd.read_csv(os.path.join('search_results', 'ppi_processed_ppi_results.csv'))
+#
+# combined_plot(df_ppi2csm, ylim_top, out_name).to_csv(out_name + ".csv")
+# combined_plot(df_ppi2ppi, ylim_top, out_name_ppi).to_csv(out_name_ppi + ".csv")
+#
+# bar_plots(df_ppi2csm, df_ppi2peppair, df_ppi2respair, df_ppi2ppi, out_name_bar)

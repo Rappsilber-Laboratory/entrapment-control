@@ -1,0 +1,140 @@
+------------------------------------------------
+xiFDR Version:,2.2.betaB
+Source:,/home/lars/work/repos/entrapment-control/search_results/xlinkx/FDR/xlinkx_xiFDR_Input.csv
+----------------FDR Filter----------------------
+,"Target FDRs:"
+psm, unrestricted
+"peptide pair", unrestricted
+"protein group", unrestricted
+Residue Pair, unrestricted
+"Protein Group Pair", unrestricted
+
+
+---------------- Filter applied prior FDR----------------------
+"minimum peptide length",unlimited
+
+"minimum peptide coverage >=",0.0
+"delta/score >=",0.0
+"minimum fragments per peptide >=",0
+
+
+"ignore potentially consecutive peptides:",,false
+
+"Accepted ambiguity:"
+"Links for one peptide pair",unlimited
+"Protein pairs for one peptide pair",unlimited
+
+----------------FDR Filter----------------------
+,"Target FDRs:",Minimum supporting peptides
+psm, unrestricted
+"peptide pair", unrestricted
+"protein group", unrestricted,1
+Residue Pair, unrestricted,1
+"Protein Group Pair", unrestricted,1
+----------------Summary of final FDR result ----------------------
+"class","all","Self TT","Self TD","Self DD","Between TT","Between TD","Between DD","Non-Covalent TT","Non-Covalent TD","Non-Covalent DD","Linear T","Linear D"
+"Input PSMs",22084
+"fdr CSMs",22084,0,0,0,21543,18,523,0,0,0,0,0
+"fdr Peptide Pairs",9994,0,0,0,9622,13,359,0,0,0,0,0
+"fdr Link",9232,0,0,0,8861,13,358
+"fdr Protein Group Pairs",6717,0,0,0,6358,12,347
+"fdr Protein Groups",3635,,,,,,,,,,3096,539
+
+
+
+---------------- FDR process settings----------------------
+"Length-Group:","4,0"
+
+
+
+
+
+"----------------Detailed summary for each FDR level----------------------"
+"Per level for each group following information are provided:"
+Input, "Number of matches that where considered as input (e.g. the total PSM or the number peptide pairs that passed the PSM-level FDR)"
+Input TT, "Number of target target matches (or just target in case of linear matches)"
+Input TD, "Number of target decoy matches - independent of order (or just decoy in case of linear matches)"
+Input DD, "Number of decoy decoy matches"
+passing FDR, "Number of matches passing the FDR (on this level - final number can be smaller do to higher level filter)"
+"FDR TT", "Number of target target matches passing the level FDR - disregarding higher level FDR filter"
+"FDR TD", "Number of target decoy matches passing the level FDR - disregarding higher level FDR filter"
+"FDR DD", "Number of decoy decoy matches passing the level FDR - disregarding higher level FDR filter"
+"lower FDR", "The next FDR < target FDR, that could be calculated (to give an idea of the precision of the FDR calculation)"
+"higher FDR", "The next FDR > targetFDR, that could be calculated (to give an idea of the precision of the FDR calculation)"
+"final", "The number of matches passing this *AND* the higher level FDR filter"
+
+"--------------------------------------"
+
+"Petide Spectrum Matches detailed summary"
+"Group","Between > 4 "
+"Input",22084
+"Input TT",21543
+"Input TD",18
+"Input DD",523
+"passing fdr (1000.0)",22084
+"FDR TT",21543
+"FDR TD",18
+"FDR DD",523
+"higher fdr",-0.023395070324467346
+"lower fdr",-0.023441489114793667
+final,22084
+"--------------------------------------"
+
+"Petide Pairs detailed summary"
+"Group","Between > 4 "
+"Input",9994
+"Input TT",9622
+"Input TD",13
+"Input DD",359
+"passing fdr (1000.0)",9994
+"FDR TT",9622
+"FDR TD",13
+"FDR DD",359
+"higher fdr",-0.03585533153190605
+"lower fdr",-0.03595926002909998
+final,9994
+"--------------------------------------"
+
+"Protein groups detailed summary"
+"Group","Between only"
+"Input",3635
+"Input TT",3096
+"Input TD",539
+"Input DD",0
+"passing fdr (1000.0)",3635
+"FDR TT",3096
+"FDR TD",539
+"FDR DD",0
+"higher fdr",0.1744186046511628
+"lower fdr",0.1740956072351421
+final,3635
+"--------------------------------------"
+
+"Protein group links detailed summary"
+"Group","Between"
+"Input",9232
+"Input TT",8861
+"Input TD",13
+"Input DD",358
+"passing fdr (1000.0)",9232
+"FDR TT",8861
+"FDR TD",13
+"FDR DD",358
+"higher fdr",-0.0388218034081932
+"lower fdr",-0.03893465748786819
+final,9232
+"--------------------------------------"
+
+"Protein group pairs detailed summary"
+"Group","Between"
+"Input",6717
+"Input TT",6358
+"Input TD",12
+"Input DD",347
+"passing fdr (1000.0)",6717
+"FDR TT",6358
+"FDR TD",12
+"FDR DD",347
+"higher fdr",-0.05253224284366153
+"lower fdr",-0.052689525007864106
+final,6717
