@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 from plots_and_functions import fasta_to_dict, find_protein_amb
 
 
@@ -17,7 +18,7 @@ def process_openpepxl(result_file, proteins):
     df = df[df['xl_type'] == 'cross-link']
 
     # subset to heteromeric
-    df = df[df['XFDR:is_interprotein'] == True]
+    df = df[(df['XFDR:is_interprotein'] == True) & (df['XFDR:is_intraprotein'] == False)]
 
     # are protein 1 or protein 2 from E. coli --> gives true / false in separate column
     # if ambiguous match contains an E. coli protein return True
@@ -40,9 +41,49 @@ def process_openpepxl(result_file, proteins):
 
     # add search engine column
     df['search_engine'] = 'OpenPepXL'
+    df.reset_index(inplace=True)
+    df["PSMID"] = ["OpenPepXL_" + str(x) for x in df.index]
 
-    # summary_table = df.reset_index()['entr_group'].value_counts()
-    # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment'] / summary_table['decoy']
-    # summary_table.to_csv('xisearch.csv')
+
+    df.rename(columns={#"accessions": "Protein1",
+               #"accessions_beta": "Protein2",
+               "sequence": "peptide1",
+               "sequence_beta": "peptide2",
+               "charge": "precursor_charge",
+               #"start": "PepPos1",
+               "xl_pos1": "LinkPos1",
+               "xl_pos2": "LinkPos2"
+               }, inplace=True)
+    df["PepPos1"] = df["start"]
+    df["isDecoy1"] = df["xl_target_decoy_alpha"]=="decoy"
+    df["isDecoy2"] = df["xl_target_decoy_beta"]=="decoy"
+    df["LinkPos1"].loc[df["LinkPos1"]==0] = 1
+    df["LinkPos2"].loc[df["LinkPos2"]==0] = 1
+    # why is the beta start separated by "_" if start is separated by ";"?
+    df["PepPos2"] = df["BetaPepEv:start"].str.replace("_", ";", regex=False)
+
+    df["Protein1"] = df["accessions"]
+    # turn target+decoy into target    
+    mask_p1_td = df["xl_target_decoy_alpha"]=="target+decoy"
+    df["Protein1"].loc[mask_p1_td] = df["Protein1"][mask_p1_td].apply(
+        lambda x : ";".join([pr for pr in x.split(";") if not pr.startswith("DECOY")]))
+    df["PepPos1"].loc[mask_p1_td] = df[["accessions","PepPos1"]][mask_p1_td].apply(
+        lambda x : ";".join([pp for pr,pp in zip(x[0].split(";"),x[1].split(";")) if not pr.startswith("DECOY")]), axis=1) 
+
+    #df["accessions_beta_old"] = df["accessions_beta"]
+    df["accessions_beta"] = df["accessions_beta"].str.replace("(?<!DECOY)_(?=DECOY|sp)",";",regex=True)
+    df["Protein2"] = df["accessions_beta"]
+    mask_p2_td = df["xl_target_decoy_beta"]=="target+decoy"
+    df["Protein2"].loc[mask_p2_td] = df["accessions_beta"][mask_p2_td].apply(
+        lambda x : ";".join([pr for pr in x.split(";") if not pr.startswith("DECOY")]))
+    df["PepPos2"].loc[mask_p2_td] = df[["accessions_beta","PepPos2"]][mask_p2_td].apply(
+        lambda x : ";".join([pp for pr,pp in zip(x[0].split(";"),x[1].split(";")) if not pr.startswith("DECOY")]), axis=1)
+    
+    df["Protein1"] = df["Protein1"].str.replace("DECOY","REV",regex=False)
+    df["Protein2"] = df["Protein2"].str.replace("DECOY","REV",regex=False)
+
+    df['isTT'] = ~(df["isDecoy1"] | df["isDecoy2"])
+    df['isDD'] = (df["isDecoy1"] & df["isDecoy2"])
+    df['isTD'] = ~(df["isTT"] | df["isDD"])
 
     return df

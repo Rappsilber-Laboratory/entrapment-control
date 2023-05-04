@@ -1,8 +1,8 @@
 import pandas as pd
-from plots_and_functions import *
+from plots_and_functions import find_protein_amb
 
 
-def process_xlinkx(result_file, decoy_file, proteins):
+def process_xlinkx(result_file, decoy_file, proteins, all_peptide_proteins, all_peptide_positions):
     """
     Process the results of XlinkX.
 
@@ -48,5 +48,76 @@ def process_xlinkx(result_file, decoy_file, proteins):
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment']/summary_table['decoy']
     # summary_table.to_csv('xlinkx_numbers.csv')
+
+    df.rename(columns={"Protein Accession A": "Protein1",
+                       "Protein Accession B": "Protein2",
+                       "Sequence A": "peptide1",
+                       "Sequence B": "peptide2",
+                       "MSMS.Info": "Scannumber",
+                       "Charge": "precursor_charge",
+                       "Crosslinker Position A": "LinkPos1",
+                       "Crosslinker Position B": "LinkPos2"
+                       }, inplace=True)
+    df["PepPos1"] = -1
+    df["PepPos2"] = -1
+    df["PepPos1"][~df["Leading Protein Position A"].isna()] = \
+        df["Leading Protein Position A"] - df['LinkPos1'] + 1
+    df["PepPos2"][~df["Leading Protein Position B"].isna()] = \
+        df["Leading Protein Position B"] - df['LinkPos2'] + 1
+
+    df['LinkPos1'].loc[df['LinkPos1'] == 0] = 1
+    df['LinkPos2'].loc[df['LinkPos2'] == 0] = 1
+
+    # for what ever reason only one protein is reported for every possible peptide position
+    # so we stick with that and get the first protein
+    df['isDecoy1'] = df["peptide1"].apply(
+        lambda x: all([y.startswith("REV_") for y in all_peptide_proteins[x]]))
+    df['isDecoy2'] = df["peptide2"].apply(
+        lambda x: all([y.startswith("REV_") for y in all_peptide_proteins[x]]))
+
+    # find the decoys proteins
+    df["Protein1"][df["Leading Protein Position A"].isna() & df['isDecoy1']] = \
+        df["peptide1"][df["Leading Protein Position A"].isna() & df['isDecoy1']].apply(
+        lambda x: all_peptide_proteins[x][0])
+    df["Protein2"][df["Leading Protein Position B"].isna() & df['isDecoy2']] = \
+        df["peptide2"][df["Leading Protein Position B"].isna() & df['isDecoy2']].apply(
+        lambda x: all_peptide_proteins[x][0])
+
+    # find the target proteins
+    df["Protein1"][df["Leading Protein Position A"].isna() & ~df['isDecoy1']] = \
+        df["peptide1"][df["Leading Protein Position A"].isna() & ~df['isDecoy1']].apply(
+        lambda x: [y for y in all_peptide_proteins[x] if not y.startswith("REV_")][0])
+    df["Protein2"][df["Leading Protein Position B"].isna() & ~df['isDecoy2']] = \
+        df["peptide2"][df["Leading Protein Position B"].isna() & ~df['isDecoy2']].apply(
+        lambda x: [y for y in all_peptide_proteins[x] if not y.startswith("REV_")][0])
+
+    # find the decoys positions
+    df["PepPos1"][df["Leading Protein Position A"].isna() & df['isDecoy1']] = \
+        df["peptide1"][df["Leading Protein Position A"].isna() & df['isDecoy1']].apply(
+        lambda x: all_peptide_positions[x][0])
+    df["PepPos2"][df["Leading Protein Position B"].isna() & df['isDecoy2']] = \
+        df["peptide2"][df["Leading Protein Position B"].isna() & df['isDecoy2']].apply(
+        lambda x: all_peptide_positions[x][0])
+
+    # find the target positions
+    df["PepPos1"][df["Leading Protein Position A"].isna() & ~df['isDecoy1']] = \
+        df["peptide1"][df["Leading Protein Position A"].isna() & ~df['isDecoy1']].apply(
+        lambda x: [peppos for prot, peppos in zip(all_peptide_proteins[x], all_peptide_positions[x])
+                   if not prot.startswith("REV_")][0])
+    df["PepPos2"][df["Leading Protein Position B"].isna() & ~df['isDecoy2']] = \
+        df["peptide2"][df["Leading Protein Position B"].isna() & ~df['isDecoy2']].apply(
+        lambda x:
+        [peppos for prot, peppos in zip(all_peptide_proteins[x], all_peptide_positions[x])
+         if not prot.startswith("REV_")][0])
+
+    # df["isDecoy1"] = df["Protein1"].str.startswith("REV_")
+    # df["isDecoy2"] = df["Protein2"].str.startswith("REV_")
+
+    df.reset_index(inplace=True)
+    df["PSMID"] = ["XilnkX_" + str(x) for x in df.index]
+
+    df['isTT'] = ~(df["isDecoy1"] | df["isDecoy2"])
+    df['isDD'] = (df["isDecoy1"] & df["isDecoy2"])
+    df['isTD'] = ~(df["isTT"] | df["isDD"])
 
     return df
