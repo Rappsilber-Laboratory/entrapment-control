@@ -217,7 +217,10 @@ def get_protein_short(prot):
 
 def convert_df(result_file):
     # plink file
-    df_plink = pd.read_csv(result_file)
+    try:
+        df_plink = pd.read_csv(result_file, compression="gzip")
+    except ValueError:
+        df_plink = pd.read_csv(result_file)
 
     # this is needed if the filtered data is used as input
     if ".filtered_cross-linked_" in result_file:

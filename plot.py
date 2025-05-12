@@ -1268,7 +1268,7 @@ def progress_bar_plot(df_csm_highest, outname = 'ppi_progress_maxTP_percent'):
         else:
             for i, (v, se) in enumerate(zip(df['True Positives%<'],df['search_engine'])):
                 # fo xsiearchh, mang and kojak we have ppi - all others get marked with a '*'
-                if se in ['xiSEARCH', 'MangoComet\nXlinkProphet', 'Kojak', 'Protein\nProspector', 'Scout']:
+                if se in ['xiSEARCH', 'MangoComet\nXlinkProphet', 'Kojak', 'Protein\nProspector']:
                     ax1.text(v - 0.01, i - 0.1, ('%.1f%%' % (v*100)), color='black', ha='right')
                     #ax1.text(v + 0.01, i - 0.1, ('%.1f%%' % ((1-v)*100)), color='gray', ha='left')
                 else:

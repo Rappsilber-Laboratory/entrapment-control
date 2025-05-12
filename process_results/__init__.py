@@ -1,6 +1,5 @@
 """Module containing result process functions for different search engines."""
 from process_results.process_kojak import process_kojak
-from process_results.process_scout import process_scout
 from process_results.process_mango_comet_xlinkprophet import process_mango_comet_xlinkprophet
 from process_results.process_plink2 import process_plink2
 from process_results.process_proteinprospector import process_proteinprospector

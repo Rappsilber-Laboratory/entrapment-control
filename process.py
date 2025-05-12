@@ -222,7 +222,7 @@ plink2_nonCleav_result_file = os.path.join(
     'ecoli_human_2023.01.24.filtered_cross-linked_spectra.csv')
 plink2_nonCleav_unfiltered_result_file = os.path.join(
     plink2_nonCleave_res_folder,
-    'ecoli_human_2023.01.24.unfiltered_cross-linked_spectra.csv')
+    'ecoli_human_2023.01.24.unfiltered_cross-linked_spectra.csv.gz')
 ## unfiltered is too big for repository adjust datastore path if needed
 # plink2_nonCleav_unfiltered_result_folder = \
 #     '/data/rappstore/users/lfischer/search_comparison/results/plink2_LK/2.3.11_nonCleavable/reports/'
