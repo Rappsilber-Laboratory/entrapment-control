@@ -12,6 +12,7 @@ numpy = "*"
 matplotlib = "*"
 tqdm = "*"
 pyteomics = "*"
+scipy = "*"
 
 [dev-packages]
 

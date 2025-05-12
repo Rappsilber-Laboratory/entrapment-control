@@ -67,7 +67,7 @@ def process_openpepxl(result_file, proteins):
     df["Protein1"].loc[mask_p1_td] = df["Protein1"][mask_p1_td].apply(
         lambda x : ";".join([pr for pr in x.split(";") if not pr.startswith("DECOY")]))
     df["PepPos1"].loc[mask_p1_td] = df[["accessions","PepPos1"]][mask_p1_td].apply(
-        lambda x : ";".join([pp for pr,pp in zip(x[0].split(";"),x[1].split(";")) if not pr.startswith("DECOY")]), axis=1) 
+        lambda x : ";".join([pp for pr,pp in zip(x.iloc[0].split(";"), x.iloc[1].split(";")) if not pr.startswith("DECOY")]), axis=1) 
 
     #df["accessions_beta_old"] = df["accessions_beta"]
     df["accessions_beta"] = df["accessions_beta"].str.replace("(?<!DECOY)_(?=DECOY|sp)",";",regex=True)
@@ -76,7 +76,7 @@ def process_openpepxl(result_file, proteins):
     df["Protein2"].loc[mask_p2_td] = df["accessions_beta"][mask_p2_td].apply(
         lambda x : ";".join([pr for pr in x.split(";") if not pr.startswith("DECOY")]))
     df["PepPos2"].loc[mask_p2_td] = df[["accessions_beta","PepPos2"]][mask_p2_td].apply(
-        lambda x : ";".join([pp for pr,pp in zip(x[0].split(";"),x[1].split(";")) if not pr.startswith("DECOY")]), axis=1)
+        lambda x : ";".join([pp for pr,pp in zip(x.iloc[0].split(";"), x.iloc[1].split(";")) if not pr.startswith("DECOY")]), axis=1)
     
     df["Protein1"] = df["Protein1"].str.replace("DECOY","REV",regex=False)
     df["Protein2"] = df["Protein2"].str.replace("DECOY","REV",regex=False)
@@ -84,5 +84,13 @@ def process_openpepxl(result_file, proteins):
     df['isTT'] = ~(df["isDecoy1"] | df["isDecoy2"])
     df['isDD'] = (df["isDecoy1"] & df["isDecoy2"])
     df['isTD'] = ~(df["isTT"] | df["isDD"])
+
+    # convert file_origin and spectrum_reference into a unique spectrum id
+    # file_origin:B190511_02_HF_LS_IN_130_ECLP_DSSO_01_SCX17_hSAX06_rep1.idXML
+    # spectrum_reference:controllerType=0 controllerNumber=1 scan=1
+    # UniqueScanID: B190511_02_HF_LS_IN_130_ECLP_DSSO_01_SCX17_hSAX06_rep1 1
+    df["UniqueScanID"] = df["file_origin"].str.replace(".idXML","") + " " + df["spectrum_reference"].str.replace(".*scan=","")
+    df['run'] = df["file_origin"].str.replace(".idXML","")
+    df['scan'] = df["spectrum_reference"].str.replace(".*scan=","", regex=True)
 
     return df

@@ -55,15 +55,21 @@ def process_kojak(result_file, proteins, fasta):
     """
 
     # read in the fasta file
-    proteins = SeqIO.parse(fasta, "fasta")
+    fasta_proteins = SeqIO.parse(fasta, "fasta")
     
     prot_array = []
     decoy_to_target = {}
+    target_prot_id_to_prot = {}
+    target_prot_id = 1
     # match decoy to target
-    for prot_id, protein in enumerate(proteins):
+    for prot_id, protein in enumerate(fasta_proteins):
+
         prot_array.append(protein.id)
         if 'decoy' in protein.id.lower() or 'reverse' in protein.id.lower():
-            decoy_to_target[protein.id] = prot_array[prot_id - 1]
+            decoy_to_target[protein.id] = prot_array[prot_id - 1].split('|')[1]
+        else:
+            target_prot_id_to_prot[target_prot_id] = protein.id.split('|')[1]
+            target_prot_id += 1
 
 
 
@@ -77,12 +83,25 @@ def process_kojak(result_file, proteins, fasta):
 
 
     # convert to matchable proteins
-    df['alpha_Proteins'] = df['alpha_Proteins'].apply(lambda x: ";".join(["REV_" + decoy_to_target[y] if y in decoy_to_target else y for y in x.split(";")]))
-    df['beta_Proteins'] = df['beta_Proteins'].apply(lambda x: ";".join(["REV_" + decoy_to_target[y] if y in decoy_to_target else y for y in x.split(";")]))
+    df['alpha_Proteins'] = df['alpha_Proteins'].apply(lambda x: ";".join(
+        ["REV_" + target_prot_id_to_prot[int(y[y.rfind('_') + 1:])] 
+         if 'DECOY' in  y 
+         else y.split('|')[1] 
+         for y in x.split(";")]))
+    df['beta_Proteins'] = df['beta_Proteins'].apply(lambda x: ";".join(
+        ["REV_" + target_prot_id_to_prot[int(y[y.rfind('_') + 1:])] 
+         if 'DECOY' in  y 
+         else y.split('|')[1] 
+         for y in x.split(";")]))
 
     # subset to heteromeric
     df['fdrGroup'] = df.apply(check_amb_fdr_group, axis=1)
     df = df[df['fdrGroup'] == 'between']
+    # merge Sample and Scan as UniqueScanID - so we can compare overlap on scan based level
+    df['UniqueScanID'] = df['Sample'] + ' ' + df['Scan'].astype(str)
+    df['run'] = df['Sample']
+    df['scan'] = df['Scan']
+    
 
     # are protein 1 or protein 2 from E. coli --> gives true / false in separate column
     # if ambiguous match contains an E. coli protein return True
@@ -103,7 +122,7 @@ def process_kojak(result_file, proteins, fasta):
     df.loc[(df['decoy1'] | df['decoy2']), 'entr_group'] = 'decoy'
 
     # add score column
-    df['score'] = df['E_value']
+    df['Score'] = df['Sum_score']
 
     # add search engine column
     df['search_engine'] = 'Kojak'
@@ -120,9 +139,9 @@ def process_kojak(result_file, proteins, fasta):
 
     # convert "alpha_Pep_Link" and "alpha_Prot_Link" into peptide position
     df["PepPos1"]=df[["alpha_Pep_Link","alpha_Prot_Link"]].apply(
-        lambda x : ";".join([str(int(i) -x[0]+1) for i in x[1].split(";")]), axis=1 ) 
+        lambda x : ";".join([str(int(i) -x.iloc[0]+1) for i in x.iloc[1].split(";")]), axis=1 ) 
     df["PepPos2"]=df[["beta_Pep_Link","beta_Prot_Link"]].apply(
-        lambda x : ";".join([str(int(i) -x[0]+1) for i in x[1].split(";")]), axis=1 ) 
+        lambda x : ";".join([str(int(i) -x.iloc[0]+1) for i in x.iloc[1].split(";")]), axis=1 ) 
     # rename some columns - so they can be read directly by xiFDR
     df.rename(columns={"alpha_Proteins": "Protein1",
                "beta_Proteins": "Protein2",

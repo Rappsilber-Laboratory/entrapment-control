@@ -1,9 +1,10 @@
 """Module containing result process functions for different search engines."""
 from process_results.process_kojak import process_kojak
+from process_results.process_scout import process_scout
 from process_results.process_mango_comet_xlinkprophet import process_mango_comet_xlinkprophet
 from process_results.process_plink2 import process_plink2
 from process_results.process_proteinprospector import process_proteinprospector
 from process_results.process_xisearch import process_xisearch
-from process_results.process_xlinkx import process_xlinkx
+from process_results.process_xlinkx import process_xlinkx, process_xlinkx_respair_to_xiFDR
 from process_results.process_merox import process_merox
 from process_results.process_openpepxl import process_openpepxl

@@ -11,7 +11,10 @@ def process_proteinprospector(result_file, proteins, all_protein_dict):
     :return: DataFrame with the results
     """
     # read the csv file
-    df = pd.read_csv(result_file)
+    try:
+        df = pd.read_csv(result_file)
+    except:
+        df = pd.read_csv(result_file, sep='\t')
     # '/proteinprospector/ec1_dsso_CSM_2p_inter.csv')
 
     # subset to heteromeric - already done in ProteinProspector ('inter' file)
@@ -89,4 +92,11 @@ def process_proteinprospector(result_file, proteins, all_protein_dict):
     df['isDD'] = (df["isDecoy1"] & df["isDecoy2"])
     df['isTD'] = ~(df["isTT"] | df["isDD"])
     
+    # convert Fraction and MSMS.Info into a unique spectrum id
+    # Fraction: recal_B190513_16_HF_LS_IN_130_ECLP_DSSO_01_SCX18_hSAX02_rep2
+    # UniqueScanID: B190513_16_HF_LS_IN_130_ECLP_DSSO_01_SCX18_hSAX02_rep2 1
+    df["UniqueScanID"] = df["Fraction"].str.replace("recal_","") + " " + df["Scannumber"].astype(str)
+    df['run'] = df['Fraction'].str.replace("recal_","")
+    df['scan'] = df['Scannumber']
+
     return df

@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 from plots_and_functions import find_protein_amb
 
 
@@ -109,5 +110,11 @@ def process_merox(result_file, proteins):
     df['PepPos2'] = df["From.1"]
     df['PepPos1'].loc[df['PepPos1']==0] = 1
     df['PepPos2'].loc[df['PepPos2']==0] = 1
+    # transform spectrum into UniqueScanID
+    usid_p = re.compile("([^.]*)\.([0-9]*)(\.[0-9]*).*")
+    df["UniqueScanID"] = df["Scan number"].apply(lambda x: usid_p.sub("\\1 \\2", x))
+    df["run"] = df["Scan number"].apply(lambda x: usid_p.sub("\\1", x))
+    df["scan"] = df["Scan number"].apply(lambda x: int(usid_p.sub("\\2", x)))
+
 
     return df

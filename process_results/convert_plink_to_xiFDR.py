@@ -220,7 +220,7 @@ def convert_df(result_file):
     df_plink = pd.read_csv(result_file)
 
     # this is needed if the filtered data is used as input
-    if "filtered_cross-linked_" in result_file:
+    if ".filtered_cross-linked_" in result_file:
         df_plink["Peptide_Type"] = 3
         df_plink_cl = df_plink[df_plink["Peptide_Type"] == 3]
         df_plink_cl = df_plink_cl.sort_values(by="Score", ascending=False)
@@ -243,6 +243,13 @@ def convert_df(result_file):
     print("Decoy Annotation..")
     # isTT, isTD, columns
     decoy_type_annotation(df_plink_cl)
+
+    # transform title into UniqueScanID
+    usid_p = re.compile("([^.]*)\.([0-9]*)(\.[0-9]*).*?")
+    df_plink_cl["UniqueScanID"] = df_plink_cl["Title"].apply(lambda x: usid_p.sub("\\1 \\2", x))
+    df_plink_cl["run"] = df_plink_cl["Title"].apply(lambda x: usid_p.sub("\\1", x))
+    df_plink_cl["scan"] = df_plink_cl["Title"].apply(lambda x: usid_p.sub("\\2", x))
+
 
     return df_plink_cl
 

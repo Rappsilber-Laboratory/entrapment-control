@@ -135,16 +135,13 @@ def find_protein_amb(protein, all_proteins):
         for prot_i in proteins:
             if '|' in prot_i:
                 prot_i = prot_i.split('|')[1]
-            if prot_i in all_proteins:
+            if prot_i.replace("REV_", "") in all_proteins:
                 return True
             return False
     else:
         if '|' in protein:
             protein = protein.split('|')[1]
-        if protein in all_proteins:
-            return True
-        else:
-            return False
+        return protein.replace("REV_", "") in all_proteins
 
 
 def plot_distribution(df, x, bins, ylim_top=None, ax=None):
@@ -152,10 +149,10 @@ def plot_distribution(df, x, bins, ylim_top=None, ax=None):
     df['ID_type'] = df['entr_group']
     if ax is None:
         fig, ax = plt.subplots()
-    sns.histplot(data=df, x=x, hue='ID_type', element="step", bins=bins, linewidth=1.7,
+    hp = sns.histplot(data=df, x=x, hue='ID_type', element="step", bins=bins, linewidth=1.7,
                  # hist_kws={"linewidth": 5, "alpha": 1},
                  hue_order=['E.coli', 'decoy', 'entrapment'], palette=palette, ax=ax)
     if ylim_top:
         ax.set_ylim(top=ylim_top)
     # plt.show()
-    return ax
+    return ax, hp, palette

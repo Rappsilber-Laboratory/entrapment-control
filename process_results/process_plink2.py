@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 from plots_and_functions import *
 from process_results.convert_plink_to_xiFDR import convert_df
 
@@ -90,6 +91,11 @@ def process_plink2(result_file, unfiltered_result_file, proteins, all_peptide_pr
     df['isTT'] = ~(df["isDecoy1"] | df["isDecoy2"])
     df['isDD'] = (df["isDecoy1"] & df["isDecoy2"])
     df['isTD'] = ~(df["isTT"] | df["isDD"])
+    # transform title into UniqueScanID
+    usid_p = re.compile("([^.]*)\.([0-9]*)\.([0-9]*)?.*")
+    df["UniqueScanID"] = df["Title"].apply(lambda x: usid_p.sub("\\1 \\2", x))
+    df["run"] = df["Title"].apply(lambda x: usid_p.sub("\\1", x))
+    df["scan"] = df["Title"].apply(lambda x: usid_p.sub("\\2", x))
 
     return df
 

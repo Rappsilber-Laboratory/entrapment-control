@@ -17,8 +17,8 @@ def process_xisearch(result_file, proteins):
 
     # are protein 1 or protein 2 from E. coli --> gives true / false in separate column
     # if ambiguous match contains an E. coli protein return True
-    df['E1'] = df['Protein1'].apply(find_protein_amb, all_proteins=proteins)
-    df['E2'] = df['Protein2'].apply(find_protein_amb, all_proteins=proteins)
+    df['E1'] = df['Protein1'].str.replace("decoy:", "").apply(find_protein_amb, all_proteins=proteins)
+    df['E2'] = df['Protein2'].str.replace("decoy:", "").apply(find_protein_amb, all_proteins=proteins)
 
     # add columns differentiating E. coli - E.coli (EE), E. coli - human (EH), human - human (HH)
     df['EE'] = df['E1'] & df['E2']
@@ -35,10 +35,16 @@ def process_xisearch(result_file, proteins):
     df['decoy'] = df['entr_group'] == 'decoy'
 
     # add score column
-    df['score'] = df['Score']
+    if 'Score' not in df.columns and 'score' not in df.columns:
+        df['score'] = df['Score']
 
     # add search engine column
     df['search_engine'] = 'xiSEARCH'
+    run_col = [x for x in df.columns if 'run' in x.lower()]
+    if len(run_col) > 0:
+        run_col = run_col[0]
+        scan_col = [x for x in df.columns if 'scan' in x.lower()][0]
+        df['UniqueScanID'] = df[run_col] + " " + df[scan_col].astype(str)
 
     # summary_table = df.reset_index()['entr_group'].value_counts()
     # summary_table['ratio_entrapment_decoy'] = summary_table['entrapment'] / summary_table['decoy']
